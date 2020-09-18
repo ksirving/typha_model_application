@@ -6,13 +6,16 @@ library(lubridate)
 
 load("input_data/typha_velocity.RData")
 
+png("Figures/Final_curves/Typha_velocity_depth.png", width = 700, height = 600)
+
 ggplot(data = velocity, mapping = aes(x = vel_m_s, y = occurrence))+
   geom_point(alpha = 0.2, size = 3)+
-  labs(x = "Velocity (m/s)", y = "Occurrence")+
+  labs(x = "Velocity (m/s)", y = "Probability")+
   geom_smooth(method = "glm", method.args = list(family = "binomial"))+
-  theme(text = element_text(size=20), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  theme(text = element_text(size=25), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), panel.border = element_rect(colour = "black", fill=NA, size=.5))
 
+dev.off()
 
 summary(vel_ptch_mdl <- glm(occurrence ~ vel_m_s, data = velocity, family = "binomial"))
 confint(vel_ptch_mdl)
