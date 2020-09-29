@@ -24,31 +24,36 @@ velocity$occurrence
 
 ## upload hydraulic data
 
-hydraul <- read.csv("input_data/demo_ts_F57C.csv")
-names(hydraul)
+## soft bottom reaches
+
+F57C <- read.csv("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas/hydraulic_ts_F57C.csv")
+# LA8 <- read.csv("input_data/HecRas/hydraulic_ts_LA8.csv")
+# LA11 <- read.csv("input_data/HecRas/hydraulic_ts_LA11.csv")
+# LA20 <- read.csv("input_data/HecRas/hydraulic_ts_LA20_2.csv")
+
+
+## go through script one at a time
+
+hydraul <- F57C[,-1]
+
 ## select columns
-hyd_dep <- hydraul[,c(1:3,8)]
-colnames(hyd_dep)[4] <-"vel_ft"
 
-## convert unit from feet to meters
-hyd_dep$vel_m_s <- (hyd_dep$vel_ft*0.3048)
-head(hyd_dep)
-range(hyd_dep$vel_m_s) ## 0.000000 2.091465
+hyd_vel <- hydraul[,c(1:3,4,8, 12)]
+colnames(hyd_vel) <-c("DateTime", "node", "Q", "vel_ft_LOB", "vel_ft_MC", "vel_ft_ROB")
 
-## plot depth v Q rating curve
-plot(hyd_dep$Q, hyd_dep$vel_m_s,  main = "F57C: Velocity ~ Q", xlab="Q (cfs)", ylab="Velocity (m/s)")
+# nas <- which(complete.cases(hyd_dep) == FALSE)
+## select column
 
-## predict on node data using model
-names(hyd_dep)
-names(velocity)
-head(velocity)
-range(velocity$vel_m_s) ## -0.1391763  1.5452614
+hyd_vel <- hyd_vel %>%
+  mutate(vel_m_LOB = (vel_ft_LOB*0.3048),
+         vel_m_MC = (vel_ft_MC*0.3048),
+         vel_m_ROB = (vel_ft_ROB*0.3048)) %>%
+  select(-contains("ft")) %>%
+  mutate(date_num = seq(1,length(DateTime), 1))
 
-## add date_num and plot time series - use numbers for now
 
-hyd_dep$date_num <- seq(1,length(hyd_dep$DateTime), 1)
-plot(hyd_dep$date_num, hyd_dep$vel_m_s, type="n")
-lines(hyd_dep$date_num, hyd_dep$vel_m_s)
+hyd_vel<-reshape2::melt(hyd_vel, id=c("DateTime","Q", "node", "date_num"))
+head(hyd_vel)
 
 ## workflow
 ## get probabilities for depth at each hourly time step
@@ -57,7 +62,7 @@ lines(hyd_dep$date_num, hyd_dep$vel_m_s)
 head(hyd_dep)
 summary(vel_ptch_mdl)
 
-new_data <- hyd_dep %>%
+new_data <- hyd_vel %>%
   select(c(DateTime, Q, vel_m_s, date_num)) %>%
   mutate(prob_fit = predict.glm(vel_ptch_mdl, newdata = hyd_dep, type = "response")) #%>%
 
