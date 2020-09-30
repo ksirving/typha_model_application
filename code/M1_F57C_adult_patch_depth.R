@@ -74,16 +74,34 @@ hyd_dep <- hyd_dep %>%
 # ## melt channel position data
 hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num"))
 hyd_dep <- hyd_dep %>% rename(depth_cm = value)
-# head(hyd_dep)
+head(hyd_dep)
 # summary(dep_ptch_mdl)
 
-new_data <- hyd_dep %>%
-  mutate(prob_fit = predict(dep_ptch_mdl, newdata = hyd_dep, type="response")) %>%
+## filter data by cross section position
+
+hyd_depM <- filter(hyd_dep, variable == "depth_cm_MC")
+hyd_depL <- filter(hyd_dep, variable == "depth_cm_LOB")
+hyd_depR <- filter(hyd_dep, variable == "depth_cm_ROB")
+
+## predict values
+
+new_dataM <- hyd_depM %>%
+  mutate(prob_fit = predict(dep_ptch_mdl, newdata = hyd_depM, type="response")) %>%
   mutate(prob_fit = ifelse(prob_fit<=0, 0, prob_fit)) ## predicts negative percentages - cut off at 0 for quick fix
 
-# range(new_data$prob_fit)
-# head(new_data)
+new_dataL <- hyd_depL %>%
+  mutate(prob_fit = predict(dep_ptch_mdl, newdata = hyd_depL, type="response")) %>%
+  mutate(prob_fit = ifelse(prob_fit<=0, 0, prob_fit)) ## predicts negative percentages - cut off at 0 for quick fix
 
+new_dataR <- hyd_depR %>%
+  mutate(prob_fit = predict(dep_ptch_mdl, newdata = hyd_depR, type="response")) %>%
+  mutate(prob_fit = ifelse(prob_fit<=0, 0, prob_fit)) ## predicts negative percentages - cut off at 0 for quick fix
+
+
+## bind back together
+new_data <- rbind(new_dataM, new_dataL, new_dataR)
+range(new_data$prob_fit)
+head(new_data)
 
 save(new_data, file="output_data/M1_F57C_typha_adult_patch_depth_discharge_probability_time_series_red_columns.RData")
 
@@ -347,8 +365,8 @@ head(new_dataMx)
 ## make dataframe for all years 
 
 ## define seasons/critical period - check and change these!!
-non_critical <- c(6:8) 
-critical <- c(9:12, 1:5) 
+non_critical <- c(1:3, 10:12) 
+critical <- c(4:9) 
 
 new_dataMx <- new_dataMx %>%
   mutate(season = ifelse(month %in% non_critical, "non_critical", "critical") )
@@ -620,8 +638,8 @@ total_days <- rename(total_days, Low = days_per_month_low, Medium = days_per_mon
 # total_hours <- rename(total_hours, Low = n_days_low, Medium = n_days_medium, High = n_days_high)
 
 ## define seasons/critical period
-non_critical <- c(6:8) 
-critical <- c(9:12, 1:5) 
+# non_critical <- c(6:8) 
+# critical <- c(9:12, 1:5) 
 
 
 total_days <- total_days %>%

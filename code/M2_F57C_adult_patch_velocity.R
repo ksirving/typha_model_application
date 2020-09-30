@@ -26,7 +26,7 @@ dev.off()
 
 summary(vel_ptch_mdl <- glm(occurrence ~ vel_m_s, data = velocity, family = "binomial"))
 confint(vel_ptch_mdl)
-save(vel_ptch_mdl, file = "models/vel_ptch_mdl.rda")
+# save(vel_ptch_mdl, file = "models/vel_ptch_mdl.rda")
 
 
 ## upload hydraulic data
@@ -307,8 +307,8 @@ head(new_dataMx)
 ## make dataframe for all years 
 
 ## define seasons/critical period - check and change these!!
-non_critical <- c(6:8) 
-critical <- c(9:12, 1:5) 
+non_critical <- c(1:3, 10:12) 
+critical <- c(4:9) 
 
 new_dataMx <- new_dataMx %>%
   mutate(season = ifelse(month %in% non_critical, "non_critical", "critical") )
