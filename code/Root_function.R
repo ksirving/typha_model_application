@@ -122,7 +122,7 @@ time_statsLxx <- new_dataLx %>%
   }) %>%
   distinct(year, Low)
 
-time_statsLxx
+time_statsLxx,
 newx2aL
 
 time_statsL_test
@@ -139,4 +139,27 @@ time_statsL_test <- new_dataLx %>%
   distinct(year, Low , Medium , High , Low.Seasonal, Medium.Seasonal, High.Seasonal) %>%
   mutate(position="LOB")
 
+ID01 = data.table::rleid(new_dataM, ifelse(is.na(newx1a[1]), "true", "false"))
+ID01 
+
+new_dataM
+
+?rleid
+
+new_dataM <- new_dataM %>%
+  group_by(month, day, year, ID01 = data.table::rleid (ifelse(is.na(newx1a[1]), 0, ifelse(length(newx1a)==1 && newx1a < peakQM), ))) {
+    0
+  } else if (length(newx1a)==1 && newx1a < peakQM){
+    # sum the amount of time above threshold
+    Q >= newx1a
+    ## if 1 threshold value and it's higher than the peak (descending slope)
+  } else {
+  
+  }
+
+low_eq <- Q >= newx1a
+low_thresh <- function(x) {
+  amount_of_time <- Q >= newx1a
+  return(amount_of_time)
+}
   

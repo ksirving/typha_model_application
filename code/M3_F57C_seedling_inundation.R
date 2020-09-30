@@ -13,7 +13,7 @@ library(data.table)
 
 
 load("input_data/typha_depth.RData")
-depth$Species
+
 
 png("Figures/Final_curves/Typha_seed_surve_both_sp.png", width = 700, height = 600)
 
@@ -82,8 +82,6 @@ hyd_dep <- hyd_dep %>%
 # ## melt channel position data
 hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num"))
 hyd_dep <- hyd_dep %>% rename(depth_cm = value)
-head(hyd_dep)
-summary(dep_sdlng_mdl)
 
 new_data <- hyd_dep %>%
   mutate(prob_fit = predict(dep_sdlng_mdl, newdata = hyd_dep, type="response")) %>%
@@ -100,7 +98,6 @@ save(new_data, file="output_data/M3_F57C_typha_seedling_depth_discharge_probabil
 
 ## look at data using lubridate etc
 
-names(new_data)
 ## format date time
 new_data$DateTime<-as.POSIXct(new_data$DateTime,
                               format = "%Y-%m-%d %H:%M",
@@ -151,8 +148,10 @@ peakQR ## 778.0038
 new_dataM <- filter(new_data, variable == "depth_cm_MC")
 new_dataL <- filter(new_data, variable == "depth_cm_LOB")
 new_dataR <- filter(new_data, variable == "depth_cm_ROB")
-limits
+
 ## Main channel curves
+
+load(file="root_interpolation_function.Rdata")
 
 newx1a <- RootLinearInterpolant(new_dataM$Q, new_dataM$prob_fit, 25)
 newx1a
@@ -326,188 +325,206 @@ new_dataRx <- new_dataRx %>%
   mutate(season = ifelse(month %in% non_critical, "non_critical", "critical") )
 
 
-limits
-newx1aL
 ## produces percentage of time for each year and season within year for each threshold
 
 
 # time stats - mid channel ------------------------------------------------
 
+### find Q for low threshold 
+
+low_thresh <- function(x) {
+  amount_of_time <- Q >= newx1a
+  return(amount_of_time)
+}
+lt <- call("low_thresh")
+is.call(lt)
+sum(eval(lt))/length(new_dataMx$DateTime)*100
+save(lt, file = "low_thresh_func.Rdata")
+
+med_thresh <- function(x) {
+  amount_of_time <- Q >= newx2a
+  return(amount_of_time)
+}
+
+high_thresh <- function(x) {
+  amount_of_time <- Q >= newx1a
+  return(amount_of_time)
+}
+
+low_thresh <- quote(Q >= newx1a)
+call("low_thresh")
+paste(low_thresh)
+?make_call
+str(low_thresh[[2]])
+QM <- new_dataMx$Q
+
+is.na(newx1a[1])
+
+  
+  if(is.na(newx1a[1])) {
+    
+    low_thresh <- function(x) {
+      amount_of_time <- 0
+      return(amount_of_time)
+  }
+  ## 1a) if 1 threshold value and it's lower than the peak (ascending slope)
+} else if(length(newx1a)==1 && newx1a < peakQM){
+  # sum the amount of time above threshold
+  low_thresh <- function(x) {
+    amount_of_time <- Q >= newx1a
+    return(amount_of_time)
+  }
+
+## 1b) if 1 threshold value and it's higher than the peak (descending slope)
+} else if (length(newx1a)==1 && newx1a > peakQM){
+  # sum the amount of time below the threshold
+  # low_thresh <- Q <= newx1a
+  low_thresh <- function(x) {
+    amount_of_time <- Q <= newx1a
+    return(amount_of_time)
+  }
+  
+  ## 2a) if 2 threshold values and the first one is lower than the peak(positive parabol)
+} else if (length(newx1a)==2 && newx1a[1] < peakQM) { 
+  # sum the amount of time above the first and below the 2nd threshold
+  # low_thresh <- Q >= newx1a[1] & Q <= newx1a[2]
+  low_thresh <- function(x) {
+    amount_of_time <- Q >= newx1a[1] & Q <= newx1a[2]
+    return(amount_of_time)
+  }
+  
+  ## 2b) if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
+} else if(length(newx1a)==2 && newx1a[1] > peakQM || newx1a[2] < peakQM ) {
+  # sum the amount of time below the first and above the 2nd threshold
+ # low_thresh <- Q <= newx1a[1] & Q >= newx1a[2]
+ low_thresh <- function(x) {
+   amount_of_time <- Q <= newx1a[1] & Q >= newx1a[2]
+   return(amount_of_time)
+ }
+ 
+ ## 3a) if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
+} else if (length(newx1a) == 3 && newx1a[3] > peakQM) {
+  # sum the amount of time below the first and above the 2nd threshold and below the 3rd
+  low_thresh <- Q <= newx1a[1] | Q >= newx1a[2] & Q <= newx1a[3]
+  
+  low_thresh <- function(x) {
+    amount_of_time <- Q <= newx1a[1] | Q >= newx1a[2] & Q <= newx1a[3]
+    return(amount_of_time)
+  }
+  
+  ## 3b) if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
+} else if (length(newx1a) == 3 && newx1a[1] < peakQM) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  # low_thresh <- Q >= newx1a[1] & Q <= newx1a[2] | Q >= newx1a[3]
+  low_thresh <- function(x) {
+    amount_of_time <- Q >= newx1a[1] & Q <= newx1a[2] | Q >= newx1a[3]
+    return(amount_of_time)
+  }
+}
+low_thresh
+lt <- call("low_thresh")
+is.call(lt)
+
+
+sum(low_thresh)/61367*100
+
+### find Q for medium threshold
+
+if(is.na(newx2a[1])) {
+  med_thresh <- 0
+  ## if 1 threshold value and it's lower than the peak (ascending slope)
+} else if(length(newx2a)==1 && newx2a < peakQM){
+  # sum the amount of time above threshold
+  med_thresh <- QM >= newx2a
+  
+  ## if 1 threshold value and it's higher than the peak (descending slope)
+} else if (length(newx2a)==1 && newx2a > peakQM){
+  # sum the amount of time below the threshold
+  med_thresh <- QM <= newx2a
+  
+  ## if 2 threshold values and the first one is lower than the peak(positive parabol)
+} else if (length(newx2a)==2 && newx2a[1] < peakQM) { 
+  # sum the amount of time above the first and below the 2nd threshold
+  med_thresh <- QM >= newx2a[1] & QM <= newx2a[2]
+  
+  ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
+} else if(length(newx2a)==2 && newx2a[1] > peakQM || newx2a[2] < peakQM ) {
+  # sum the amount of time below the first and above the 2nd threshold
+  med_thresh <- QM <= newx2a[1] & QM >= newx2a[2]
+  
+  ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
+} else if (length(newx2a) == 3 && newx2a[3] > peakQM) {
+  # sum the amount of time below the first and above the 2nd threshold and below the 3rd
+  med_thresh <- QM <= newx2a[1] | QM >= newx2a[2] & QM <= newx2a[3]
+  
+  ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
+} else if (length(newx2a) == 3 && newx2a[1] < peakQM) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  med_thresh <- QM >= newx2a[1] & QM <= newx2a[2] | QM >= newx2a[3]
+}
+sum(med_thresh)/length(new_dataMx$DateTime)*100
+length(new_dataMx$DateTime)
+### find Q for high threshold
+
+if(is.na(newx3a[1])) {
+  high_thresh <- 0
+  ## if 1 threshold value and it's lower than the peak (ascending slope)
+} else if(length(newx3a)==1 && newx3a < peakQM){
+  # sum the amount of time above threshold
+  high_thresh <- QM >= newx3a
+  
+  ## if 1 threshold value and it's higher than the peak (descending slope)
+} else if (length(newx3a)==1 && newx3a > peakQM){
+  # sum the amount of time below the threshold
+  high_thresh <- QM <= newx3a
+  
+  ## if 2 threshold values and the first one is lower than the peak(positive parabol)
+} else if (length(newx3a)==2 && newx3a[1] < peakQM) { 
+  # sum the amount of time above the first and below the 2nd threshold
+  high_thresh <- QM >= newx3a[1] & QM <= newx3a[2]
+  
+  ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
+} else if(length(newx3a)==2 && newx3a[1] > peakQM || newx3a[2] < peakQM ) {
+  # sum the amount of time below the first and above the 2nd threshold
+  high_thresh <- QM <= newx3a[1] & QM >= newx3a[2]
+  
+  ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
+} else if (length(newx3a) == 3 && newx3a[3] > peakQM) {
+  # sum the amount of time below the first and above the 2nd threshold and below the 3rd
+  high_thresh <- QM <= newx3a[1] | QM >= newx3a[2] & QM <= newx3a[3]
+  
+  ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
+} else if (length(newx3a) == 3 && newx3a[1] < peakQM) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  high_thresh <- QM >= newx3a[1] & QM <= newx3a[2] | QM >= newx3a[3]
+}
+
+sum(high_thresh)
+sum(low_thresh)
+sum(med_thresh)/61367*100
+###### calculate amount of time
+
+as.list(environment(lt))
+is.call(lt)
+lt
+low_thresh
 
 time_statsm <- new_dataMx %>%
   dplyr::group_by(year) %>%
-  ## if 1 threshold value and it's lower than the peak (ascending slope)
-  dplyr::mutate(Low = if(is.na(newx1a[1])) {
-    0
-  } else if(length(newx1a)==1 && newx1a < peakQM){
-    # sum the amount of time above threshold
-    sum(Q >= newx1a)/length(DateTime)*100
-    ## if 1 threshold value and it's higher than the peak (descending slope)
-  } else if (length(newx1a)==1 && newx1a > peakQM){
-    # sum the amount of time below the threshold
-    sum(Q <= newx1a)/length(DateTime)*100
-    ## if 2 threshold values and the first one is lower than the peak(positive parabol)
-  } else if (length(newx1a)==2 && newx1a[1] < peakQM) { 
-    # sum the amount of time above the first and below the 2nd threshold
-    sum(Q >= newx1a[1] & Q <= newx1a[2])/length(DateTime)*100
-    ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-  } else if(length(newx1a)==2 && newx1a[1] > peakQM || newx1a[2] < peakQM ) {
-    # sum the amount of time below the first and above the 2nd threshold
-    sum(Q <= newx1a[1] & Q >= newx1a[2])/length(DateTime)*100
-    ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
-  } else if (length(newx1a) == 3 && newx1a[3] > peakQM) {
-      # sum the amount of time below the first and above the 2nd threshold and below the 3rd
-      sum(Q <= newx1a[1] | Q >= newx1a[2] & Q <= newx1a[3])/length(DateTime)*100
-    ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
-  } else if (length(newx1a) == 3 && newx1a[1] < peakQM) {
-    # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-    sum(Q >= newx1a[1] & Q <= newx1a[2] | Q >= newx1a[3])/length(DateTime)*100
-
-  })%>%
-  dplyr::mutate(Medium = if(is.na(newx2a[1])) {
-    0
-  } else if(length(newx2a)==1 && newx2a < peakQM){
-    # sum the amount of time above threshold
-    sum(Q >= newx2a)/length(DateTime)*100
-    ## if 1 threshold value and it's higher than the peak (descending slope)
-  } else if (length(newx2a)==1 && newx2a > peakQM){
-    # sum the amount of time below the threshold
-    sum(Q <= newx2a)/length(DateTime)*100
-    ## if 2 threshold values and the first one is lower than the peak(positive parabol)
-  } else if (length(newx2a)==2 && newx2a[1] < peakQM) { 
-    # sum the amount of time above the first and below the 2nd threshold
-    sum(Q >= newx2a[1] & Q <= newx2a[2])/length(DateTime)*100
-    ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-  } else if(length(newx2a)==2 && newx2a[1] > peakQM || newx2a[2] < peakQM ) {
-    # sum the amount of time below the first and above the 2nd threshold
-    sum(Q <= newx2a[1] & Q >= newx2a[2])/length(DateTime)*100
-    ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
-  } else if (length(newx2a) == 3 && newx2a[3] > peakQM) {
-    # sum the amount of time below the first and above the 2nd threshold and below the 3rd
-    sum(Q <= newx2a[1] | Q >= newx2a[2] & Q <= newx2a[3])/length(DateTime)*100
-    ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
-  } else if (length(newx2a) == 3 && newx2a[1] < peakQM) {
-    # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-    sum(Q >= newx2a[1] & Q <= newx2a[2] | Q >= newx2a[3])/length(DateTime)*100
-
-  }) %>%
-  dplyr::mutate(High = if(is.na(newx3a[1])) {
-    0
-  } else if(length(newx3a)==1 && newx3a < peakQM){
-    # sum the amount of time above threshold
-    sum(Q >= newx3a)/length(DateTime)*100
-    ## if 1 threshold value and it's higher than the peak (descending slope)
-  } else if (length(newx3a)==1 && newx3a > peakQM){
-    # sum the amount of time below the threshold
-    sum(Q <= newx3a)/length(DateTime)*100
-    ## if 2 threshold values and the first one is lower than the peak(positive parabol)
-  } else if (length(newx3a)==2 && newx3a[1] < peakQM) { 
-    # sum the amount of time above the first and below the 2nd threshold
-    sum(Q >= newx3a[1] & Q <= newx3a[2])/length(DateTime)*100
-    ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-  } else if(length(newx3a)==2 && newx3a[1] > peakQM || newx3a[2] < peakQM ) {
-    # sum the amount of time below the first and above the 2nd threshold
-    sum(Q <= newx3a[1] & Q >= newx3a[2])/length(DateTime)*100
-    ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
-  } else if (length(newx3a) == 3 && newx3a[3] > peakQM) {
-    # sum the amount of time below the first and above the 2nd threshold and below the 3rd
-    sum(Q <= newx3a[1] | Q >= newx3a[2] & Q <= newx3a[3])/length(DateTime)*100
-    ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
-  } else if (length(newx3a) == 3 && newx3a[1] < peakQM) {
-    # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-    sum(Q >= newx3a[1] & Q <= newx3a[2] | Q >= newx3a[3])/length(DateTime)*100
-
-  }) %>%
+  dplyr::mutate(Low = sum(eval(lt))/length(DateTime)*100) %>%
+  dplyr::mutate(Medium = sum(eval(lt))/length(DateTime)*100) %>%
+  dplyr::mutate(High = sum(eval(lt))/length(DateTime)*100) %>%
   ungroup() %>%
   dplyr::group_by(year, season) %>%
-  ## if 1 threshold value and it's lower than the peak (ascending slope)
-  dplyr::mutate(Low.Seasonal = if(is.na(newx1a[1])) {
-    0
-  } else if(length(newx1a)==1 && newx1a < peakQM){
-    # sum the amount of time above threshold
-    sum(Q >= newx1a)/length(DateTime)*100
-    ## if 1 threshold value and it's higher than the peak (descending slope)
-  } else if (length(newx1a)==1 && newx1a > peakQM){
-    # sum the amount of time below the threshold
-    sum(Q <= newx1a)/length(DateTime)*100
-    ## if 2 threshold values and the first one is lower than the peak(positive parabol)
-  } else if (length(newx1a)==2 && newx1a[1] < peakQM) { 
-    # sum the amount of time above the first and below the 2nd threshold
-    sum(Q >= newx1a[1] & Q <= newx1a[2])/length(DateTime)*100
-    ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-  } else if(length(newx1a)==2 && newx1a[1] > peakQM || newx1a[2] < peakQM ) {
-    # sum the amount of time below the first and above the 2nd threshold
-    sum(Q <= newx1a[1] & Q >= newx1a[2])/length(DateTime)*100
-    ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
-  } else if (length(newx1a) == 3 && newx1a[3] > peakQM) {
-    # sum the amount of time below the first and above the 2nd threshold and below the 3rd
-    sum(Q <= newx1a[1] | Q >= newx1a[2] & Q <= newx1a[3])/length(DateTime)*100
-    ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
-  } else if (length(newx1a) == 3 && newx1a[1] < peakQM) {
-    # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-    sum(Q >= newx1a[1] & Q <= newx1a[2] | Q >= newx1a[3])/length(DateTime)*100
-
-  }) %>%
-  dplyr::mutate(Medium.Seasonal = if(is.na(newx2a[1])) {
-    0
-  } else if(length(newx2a)==1 && newx2a < peakQM){
-    # sum the amount of time above threshold
-    sum(Q >= newx2a)/length(DateTime)*100
-    ## if 1 threshold value and it's higher than the peak (descending slope)
-  } else if (length(newx2a)==1 && newx2a > peakQM){
-    # sum the amount of time below the threshold
-    sum(Q <= newx2a)/length(DateTime)*100
-    ## if 2 threshold values and the first one is lower than the peak(positive parabol)
-  } else if (length(newx2a)==2 && newx2a[1] < peakQM) { 
-    # sum the amount of time above the first and below the 2nd threshold
-    sum(Q >= newx2a[1] & Q <= newx2a[2])/length(DateTime)*100
-    ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-  } else if(length(newx2a)==2 && newx2a[1] > peakQM || newx2a[2] < peakQM ) {
-    # sum the amount of time below the first and above the 2nd threshold
-    sum(Q <= newx2a[1] & Q >= newx2a[2])/length(DateTime)*100
-    ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
-  } else if (length(newx2a) == 3 && newx2a[3] > peakQM) {
-    # sum the amount of time below the first and above the 2nd threshold and below the 3rd
-    sum(Q <= newx2a[1] | Q >= newx2a[2] & Q <= newx2a[3])/length(DateTime)*100
-    ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
-  } else if (length(newx2a) == 3 && newx2a[1] < peakQM) {
-    # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-    sum(Q >= newx2a[1] & Q <= newx2a[2] | Q >= newx2a[3])/length(DateTime)*100
-
-  }) %>%
-  dplyr::mutate(High.Seasonal = if(is.na(newx3a[1])) {
-    0
-  } else if(length(newx3a)==1 && newx3a < peakQM){
-    # sum the amount of time above threshold
-    sum(Q >= newx3a)/length(DateTime)*100
-    ## if 1 threshold value and it's higher than the peak (descending slope)
-  } else if (length(newx3a)==1 && newx3a > peakQM){
-    # sum the amount of time below the threshold
-    sum(Q <= newx3a)/length(DateTime)*100
-    ## if 2 threshold values and the first one is lower than the peak(positive parabol)
-  } else if (length(newx3a)==2 && newx3a[1] < peakQM) { 
-    # sum the amount of time above the first and below the 2nd threshold
-    sum(Q >= newx3a[1] & Q <= newx3a[2])/length(DateTime)*100
-    ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-  } else if(length(newx3a)==2 && newx3a[1] > peakQM || newx3a[2] < peakQM ) {
-    # sum the amount of time below the first and above the 2nd threshold
-    sum(Q <= newx3a[1] & Q >= newx3a[2])/length(DateTime)*100
-    ## if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
-  } else if (length(newx3a) == 3 && newx3a[3] > peakQM) {
-    # sum the amount of time below the first and above the 2nd threshold and below the 3rd
-    sum(Q <= newx3a[1] | Q >= newx3a[2] & Q <= newx3a[3])/length(DateTime)*100
-    ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
-  } else if (length(newx3a) == 3 && newx3a[1] < peakQM) {
-    # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-    sum(Q >= newx3a[1] & Q <= newx3a[2] | Q >= newx3a[3])/length(DateTime)*100
-  }) %>%
+  dplyr::mutate(Low.Seasonal = sum(eval(lt))/length(DateTime)*100) %>%
+  dplyr::mutate(Medium.Seasonal = sum(eval(lt))/length(DateTime)*100) %>%
+  dplyr::mutate(High.Seasonal = sum(eval(lt))/length(DateTime)*100) %>%
   distinct(year, Low , Medium , High , Low.Seasonal, Medium.Seasonal, High.Seasonal) %>%
   mutate(position="MC")
+  
+time_statsm
 
-newx3a    
-time_statsm 
-
-
+ 
 # time stats - left over bank ---------------------------------------------
 
 
@@ -944,19 +961,25 @@ dev.off()
 # need number of days discharge is above the limits outlined above - counted per month
 ## packages
 limits
-
+low_thresh <- Q >= newx1a
+### take info  about the thresholds and include it here - use the equations as objects
+### e.g. sum(Q >= newx1a)/length(DateTime)*100
+## low_equation <- Q >= newx1a
+  head(new_dataM)
 new_dataM <- new_dataM %>%
   ungroup() %>%
-  group_by(month, day, year, ID01 = data.table::rleid( Q <= newx1b)) %>%
-  mutate(Low = if_else(Q <= newx1b, row_number(), 0L)) %>%
+  group_by(month, day, year, ID01 = data.table::rleid(low_thresh)) %>%
+  mutate(Low = if_else(low_thresh(), row_number(), 0L)) %>%
   ungroup() %>%
-  group_by(month, day, year, ID02 = data.table::rleid(Q <= newx2b)) %>%
-  mutate(Medium = if_else(Q <= newx2b, row_number(), 0L)) %>%
+  group_by(month, day, year, ID02 = data.table::rleid(low_thresh)) %>%
+  mutate(Medium = if_else(med_thresh(), row_number(), 0L)) %>%
   ungroup() %>%
-  group_by(month, day, year, ID03 = data.table::rleid(Q >= newx3a & Q <= newx3b)) %>%
-  mutate(High = if_else(Q >= newx3a & Q <= newx3b, row_number(), 0L))
+  group_by(month, day, year, ID03 = data.table::rleid(low_thresh)) %>%
+  mutate(High = if_else(high_thresh(), row_number(), 0L))
 
 new_dataM <- mutate(new_dataM, position="MC")
+rlang::last_error()
+
 
 new_dataL <- new_dataL %>%
   ungroup() %>%
