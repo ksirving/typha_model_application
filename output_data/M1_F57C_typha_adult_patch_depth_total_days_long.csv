@@ -566,7 +566,7 @@
 "565",2017-03-01,2017,3,"non_critical","LOB","High",0
 "566",2017-03-01,2017,3,"non_critical","MC","High",0
 "567",2017-03-01,2017,3,"non_critical","ROB","High",0
-"568",2011-04-01,2011,4,"critical","LOB","High",0
+"568",2011-04-01,2011,4,"critical","LOB","High",8
 "569",2011-04-01,2011,4,"critical","MC","High",0
 "570",2011-04-01,2011,4,"critical","ROB","High",0
 "571",2012-04-01,2012,4,"critical","LOB","High",0
@@ -734,7 +734,7 @@
 "733",2016-11-01,2016,11,"non_critical","LOB","High",0
 "734",2016-11-01,2016,11,"non_critical","MC","High",0
 "735",2016-11-01,2016,11,"non_critical","ROB","High",0
-"736",2010-12-01,2010,12,"non_critical","LOB","High",2
+"736",2010-12-01,2010,12,"non_critical","LOB","High",1
 "737",2010-12-01,2010,12,"non_critical","MC","High",2
 "738",2010-12-01,2010,12,"non_critical","ROB","High",0
 "739",2011-12-01,2011,12,"non_critical","LOB","High",0

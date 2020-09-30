@@ -192,21 +192,23 @@ newx3aR
 
 ## MAKE DF OF Q LIMITS
 
-limits <- as.data.frame(matrix(ncol=3, nrow=9)) %>%
+limits <- as.data.frame(matrix(ncol=3, nrow=12)) %>%
   rename(LOB = V1, MC = V2, ROB = V3) 
-rownames(limits)<-c("Low_Prob_1", "Low_Prob_2", "Low_Prob_3", "Med_Prob_1",
-                    "Med_Prob_2", "Med_Prob_3", "High_Prob_1", "High_Prob_2", "High_Prob_3")
+rownames(limits)<-c("Low_Prob_1", "Low_Prob_2", "Low_Prob_3", "Low_Prob_4",
+                    "Med_Prob_1", "Med_Prob_2", "Med_Prob_3", "Med_Prob_4",
+                    "High_Prob_1", "High_Prob_2", "High_Prob_3", "High_Prob_4")
 
-limits$LOB <- c(newx1aL[1], newx1aL[2],newx1aL[3], newx2aL[1], newx2aL[2],newx2aL[3],  
-                newx3aL[1], newx3aL[2],newx3aL[3])
+limits$LOB <- c(newx1aL[1], newx1aL[2],newx1aL[3],newx1aL[4], 
+                newx2aL[1], newx2aL[2],newx2aL[3], newx2aL[4],  
+                newx3aL[1], newx3aL[2],newx3aL[3], newx3aL[4])
 
-limits$MC <- c(newx1a[1], newx1a[2],newx1a[3], newx2a[1], newx2a[2],newx2a[3],  
-               newx3a[1], newx3a[2],newx3a[3])
+limits$MC <- c(newx1a[1], newx1a[2],newx1a[3], newx1aL[4],
+               newx2a[1], newx2a[2],newx2a[3], newx2a[4], 
+               newx3a[1], newx3a[2],newx3a[3],newx3a[4])
 
-limits$ROB <- c(newx1aR[1], newx1aR[2],newx1aR[3], newx2aR[1], newx2aR[2],newx2aR[3], 
-                newx3aR[1], newx3aR[2],newx3aR[3])
-
-limits
+limits$ROB <- c(newx1aR[1], newx1aR[2],newx1aR[3], newx1aR[4], 
+                newx2aR[1], newx2aR[2],newx2aR[3], newx2aR[4],
+                newx3aR[1], newx3aR[2],newx3aR[3], newx3aR[4])
 
 write.csv(limits, "output_data/M3_F57C_Typha_seedling_Depth_Q_limits.csv")
 
@@ -223,36 +225,45 @@ ggplot(new_data, aes(x = Q, y=prob_fit)) +
   #                         labels = c("LOB", "MC", "ROB")) +
   
   facet_wrap(~variable, scales="free_x", nrow=3, labeller=labeller(variable = labels)) +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=25, x=newx1a[1]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=25, x=newx1a[2]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=25, x=newx1a[3]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=50, x=newx2a[1]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=50, x=newx2a[2]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=50, x=newx2a[3]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=75, x=newx3a[1]), color="blue") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=75, x=newx3a[2]), color="blue") +
-  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=75, x=newx3a[3]), color="blue") +
-
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=25, x=newx1aL[1]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=25, x=newx1aL[2]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=25, x=newx1aL[3]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=50, x=newx2aL[1]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=50, x=newx2aL[2]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=50, x=newx2aL[3]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=75, x=newx3aL[1]), color="blue") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=75, x=newx3aL[2]), color="blue") +
-  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=75, x=newx3aL[3]), color="blue") +
-
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=25, x=newx1aR[1]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=25, x=newx1aR[2]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=25, x=newx1aR[3]), color="green") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=50, x=newx2aR[1]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=50, x=newx2aR[2]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=50, x=newx2aR[3]), color="red") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=75, x=newx3aR[1]), color="blue") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=75, x=newx3aR[2]), color="blue") +
-  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=75, x=newx3aR[3]), color="blue") +
-
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.25, x=newx1a[1]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.25, x=newx1a[2]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.25, x=newx1a[3]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.25, x=newx1a[4]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.50, x=newx2a[1]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.50, x=newx2a[2]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.50, x=newx2a[3]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.50, x=newx2a[4]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.75, x=newx3a[1]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.75, x=newx3a[2]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.75, x=newx3a[3]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_MC"), aes(y=0.75, x=newx3a[4]), color="blue") +
+  
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.25, x=newx1aL[1]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.25, x=newx1aL[2]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.25, x=newx1aL[3]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.25, x=newx1aL[4]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.50, x=newx2aL[1]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.50, x=newx2aL[2]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.50, x=newx2aL[3]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.50, x=newx2aL[4]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.75, x=newx3aL[1]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.75, x=newx3aL[2]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.75, x=newx3aL[3]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_LOB"), aes(y=0.75, x=newx3aL[4]), color="blue") +
+  
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.25, x=newx1aR[1]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.25, x=newx1aR[2]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.25, x=newx1aR[3]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.25, x=newx1aR[4]), color="green") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.50, x=newx2aR[1]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.50, x=newx2aR[2]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.50, x=newx2aR[3]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.50, x=newx2aR[4]), color="red") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.75, x=newx3aR[1]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.75, x=newx3aR[2]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.75, x=newx3aR[3]), color="blue") +
+  geom_point(data = subset(new_data, variable =="depth_cm_ROB"), aes(y=0.75, x=newx3aR[4]), color="blue") +
+  
   
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
   labs(title = "F57C: Seedling/Depth: Probability ~ Q",
@@ -330,17 +341,15 @@ new_dataRx <- new_dataRx %>%
 
 # time stats - mid channel ------------------------------------------------
 
-### define expression for low threshold 
-  
 if(is.na(newx1a[1])) {
-    
-    low_threshM <- expression(Q < 0)
+  
+  low_threshM <- expression(Q < 0)
   ## 1a) if 1 threshold value and it's lower than the peak (ascending slope)
 } else if(length(newx1a)==1 && newx1a < peakQM){
   # sum the amount of time above threshold
   low_threshM <- expression(Q >= newx1a)
-
-## 1b) if 1 threshold value and it's higher than the peak (descending slope)
+  
+  ## 1b) if 1 threshold value and it's higher than the peak (descending slope)
 } else if (length(newx1a)==1 && newx1a > peakQM){
   # sum the amount of time below the threshold
   low_threshM <- expression(Q <= newx1a)
@@ -349,13 +358,13 @@ if(is.na(newx1a[1])) {
 } else if (length(newx1a)==2 && newx1a[1] < peakQM) { 
   # sum the amount of time above the first and below the 2nd threshold
   low_threshM <- expression(Q >= newx1a[1] & Q <= newx1a[2])
- 
+  
   ## 2b) if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx1a)==2 && newx1a[1] > peakQM || newx1a[2] < peakQM ) {
+} else if(length(newx1a)==2 && (newx1a[1] > peakQM || newx1a[2] < peakQM )) {
   # sum the amount of time below the first and above the 2nd threshold
- low_threshM <- expression(Q <= newx1a[1] & Q >= newx1a[2])
- 
- ## 3a) if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
+  low_threshM <- expression(Q <= newx1a[1] & Q >= newx1a[2])
+  
+  ## 3a) if 3 threshold values and the 3rd one is higher then the peak (begins positive slope)
 } else if (length(newx1a) == 3 && newx1a[3] > peakQM) {
   # sum the amount of time below the first and above the 2nd threshold and below the 3rd
   low_threshM <- expression(Q <= newx1a[1] | Q >= newx1a[2] & Q <= newx1a[3])
@@ -364,6 +373,17 @@ if(is.na(newx1a[1])) {
 } else if (length(newx1a) == 3 && newx1a[1] < peakQM) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   low_threshM <- expression(Q >= newx1a[1] & Q <= newx1a[2] | Q >= newx1a[3])
+  
+  ## 4a) if 4 threshold values and all are higher than the peak (begins positive slope)
+} else if (length(newx1a) == 4 && newx1a[1] < peakQM) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  low_threshM <- expression(Q >= newx1a[1] & Q <= newx1a[2] |  Q >= newx1a[3] & Q <= newx1a[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx1a) == 4 && (newx1a[1] < peakQM && newx1a[2] < peakQM && newx1a[3] < peakQM && newx1a[4] < peakQM || newx1a[1] > peakQM 
+                                   && newx1a[2] > peakQM && newx1a[3] > peakQM && newx1a[4] > peakQM  || newx1a[2] < peakQM && newx1a[3] > peakQM)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  low_threshM <- expression(Q <= newx1a[1] & Q >= newx1a[2] |  Q <= newx1a[3] & Q >= newx1a[4])
 }
 
 low_threshM
@@ -388,7 +408,7 @@ if(is.na(newx2a[1])) {
   med_threshM <- expression(Q >= newx2a[1] & Q <= newx2a[2])
   
   ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx2a)==2 && newx2a[1] > peakQM || newx2a[2] < peakQM ) {
+} else if(length(newx2a)==2 && (newx2a[1] > peakQM || newx2a[2] < peakQM) ) {
   # sum the amount of time below the first and above the 2nd threshold
   med_threshM <- expression(Q <= newx2a[1] & Q >= newx2a[2])
   
@@ -401,6 +421,17 @@ if(is.na(newx2a[1])) {
 } else if (length(newx2a) == 3 && newx2a[1] < peakQM) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   med_threshM <- expression(Q >= newx2a[1] & Q <= newx2a[2] | Q >= newx2a[3])
+  
+  ## 4a) if 4 threshold values and all are higher than the peak (begins positive slope)
+} else if (length(newx2a) == 4 && newx2a[1] < peakQM) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  med_threshM <- expression(Q >= newx2a[1] & Q <= newx2a[2] |  Q >= newx2a[3] & Q <= newx2a[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx2a) == 4 && (newx2a[1] < peakQM && newx2a[2] < peakQM && newx2a[3] < peakQM && newx2a[4] < peakQM || newx2a[1] > peakQM 
+                                   && newx2a[2] > peakQM && newx2a[3] > peakQM && newx2a[4] > peakQM  || newx2a[2] < peakQM && newx2a[3] > peakQM)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  med_threshM <- expression(Q <= newx2a[1] & Q >= newx2a[2] |  Q <= newx2a[3] & Q >= newx2a[4])
 }
 
 med_threshM
@@ -425,7 +456,7 @@ if(is.na(newx3a[1])) {
   high_threshM <- expression(Q >= newx3a[1] & Q <= newx3a[2])
   
   ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx3a)==2 && newx3a[1] > peakQM || newx3a[2] < peakQM ) {
+} else if(length(newx3a)==2 && (newx3a[1] > peakQM || newx3a[2] < peakQM) ) {
   # sum the amount of time below the first and above the 2nd threshold
   high_threshM <- expression(Q <= newx3a[1] & Q >= newx3a[2])
   
@@ -438,6 +469,17 @@ if(is.na(newx3a[1])) {
 } else if (length(newx3a) == 3 && newx3a[1] < peakQM) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   high_threshM <- expression(Q >= newx3a[1] & Q <= newx3a[2] | QM >= newx3a[3])
+  
+  ## 4a) if 4 threshold values and all are higher than the peak (begins positive slope)
+} else if (length(newx3a) == 4 && newx3a[1] < peakQM) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  med_threshM <- expression(Q >= newx3a[1] & Q <= newx3a[2] |  Q >= newx3a[3] & Q <= newx3a[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx3a) == 4 && (newx3a[1] < peakQM && newx3a[2] < peakQM && newx3a[3] < peakQM && newx3a[4] < peakQM || newx3a[1] > peakQM 
+                                   && newx3a[2] > peakQM && newx3a[3] > peakQM && newx3a[4] > peakQM  || newx3a[2] < peakQM && newx3a[3] > peakQM)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  med_threshM <- expression(Q <= newx3a[1] & Q >= newx3a[2] |  Q <= newx3a[3] & Q >= newx3a[4])
 }
 
 high_threshM
@@ -457,10 +499,10 @@ time_statsm <- new_dataMx %>%
   dplyr::mutate(High.Seasonal = sum(eval(high_threshM))/length(DateTime)*100) %>%
   distinct(year, Low , Medium , High , Low.Seasonal, Medium.Seasonal, High.Seasonal) %>%
   mutate(position="MC")
-  
+
 time_statsm
 
- 
+
 # time stats - left over bank ---------------------------------------------
 
 
@@ -485,7 +527,7 @@ if(is.na(newx1aL[1])) {
   low_threshL <- expression(Q >= newx1aL[1] & Q <= newx1aL[2])
   
   ## 2b) if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx1aL)==2 && newx1aL[1] > peakQL || newx1aL[2] < peakQL ) {
+} else if(length(newx1aL)==2 && (newx1aL[1] > peakQL || newx1aL[2] < peakQL) ) {
   # sum the amount of time below the first and above the 2nd threshold
   low_threshL <- expression(Q <= newx1aL[1] & Q >= newx1aL[2])
   
@@ -498,6 +540,17 @@ if(is.na(newx1aL[1])) {
 } else if (length(newx1aL) == 3 && newx1aL[1] < peakQL) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   low_threshL <- expression(Q >= newx1aL[1] & Q <= newx1aL[2] | Q >= newx1aL[3])
+  
+  ## 4a) if 4 threshold values and all are higher than the peak (begins positive slope)
+} else if (length(newx1aL) == 4 && newx1aL[1] < peakQL) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  low_threshL <- expression(Q >= newx1aL[1] & Q <= newx1aL[2] |  Q >= newx1aL[3] & Q <= newx1aL[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx1aL) == 4 && (newx1aL[1] < peakQL && newx1aL[2] < peakQL && newx1aL[3] < peakQL && newx1aL[4] < peakQL || newx1aL[1] > peakQL 
+                                    && newx1aL[2] > peakQL && newx1aL[3] > peakQL && newx1aL[4] > peakQL  || newx1aL[2] < peakQL && newx1aL[3] > peakQL)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  low_threshL <- expression(Q <= newx1aL[1] & Q >= newx1aL[2] |  Q <= newx1aL[3] & Q >= newx1aL[4])
 }
 
 low_threshL
@@ -522,7 +575,7 @@ if(is.na(newx2aL[1])) {
   med_threshL <- expression(Q >= newx2aL[1] & Q <= newx2aL[2])
   
   ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx2aL)==2 && newx2aL[1] > peakQL || newx2aL[2] < peakQL ) {
+} else if(length(newx2aL)==2 && (newx2aL[1] > peakQL || newx2aL[2] < peakQL )) {
   # sum the amount of time below the first and above the 2nd threshold
   med_threshL <- expression(Q <= newx2aL[1] & Q >= newx2aL[2])
   
@@ -535,6 +588,17 @@ if(is.na(newx2aL[1])) {
 } else if (length(newx2aL) == 3 && newx2aL[1] < peakQL) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   med_threshL <- expression(Q >= newx2aL[1] & Q <= newx2aL[2] | Q >= newx2aL[3])
+  ## 4a) if 4 threshold values and all are higher than the peak (begins positive slope)
+  
+} else if (length(newx2aL) == 4 && newx2aL[1] < peakQL) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  med_threshL <- expression(Q >= newx2aL[1] & Q <= newx2aL[2] |  Q >= newx2aL[3] & Q <= newx2aL[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx2aL) == 4 && (newx2aL[1] < peakQL && newx2aL[2] < peakQL && newx2aL[3] < peakQL && newx2aL[4] < peakQL || newx2aL[1] > peakQL 
+                                    && newx2aL[2] > peakQL && newx2aL[3] > peakQL && newx2aL[4] > peakQL  || newx2aL[2] < peakQL && newx2aL[3] > peakQL)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  med_threshL <- expression(Q <= newx2aL[1] & Q >= newx2aL[2] |  Q <= newx2aL[3] & Q >= newx2aL[4])
 }
 
 med_threshL
@@ -559,7 +623,7 @@ if(is.na(newx3aL[1])) {
   high_threshL <- expression(Q >= newx3aL[1] & Q <= newx3aL[2])
   
   ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx3aL)==2 && newx3aL[1] > peakQL || newx3aL[2] < peakQL ) {
+} else if(length(newx3aL)==2 && (newx3aL[1] > peakQL || newx3aL[2] < peakQL )) {
   # sum the amount of time below the first and above the 2nd threshold
   high_threshL <- expression(Q <= newx3aL[1] & Q >= newx3aL[2])
   
@@ -572,10 +636,19 @@ if(is.na(newx3aL[1])) {
 } else if (length(newx3aL) == 3 && newx3aL[1] < peakQL) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   high_threshL <- expression(Q >= newx3aL[1] & Q <= newx3aL[2] | QM >= newx3aL[3])
+  
+} else if (length(newx3aL) == 4 && newx3aL[1] < peakQL) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  high_threshL <- expression(Q >= newx3aL[1] & Q <= newx3aL[2] | Q >= newx3aL[3] & Q <= newx3aL[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx3aL) == 4 && (newx3aL[1] < peakQL && newx3aL[2] < peakQL && newx3aL[3] < peakQL && newx3aL[4] < peakQL || newx3aL[1] > peakQL 
+                                    && newx3aL[2] > peakQL && newx3aL[3] > peakQL && newx3aL[4] > peakQL  || newx3aL[2] < peakQL && newx3aL[3] > peakQL)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  high_threshL <- expression(Q <= newx3aL[1] & Q >= newx3aL[2] |  Q <= newx3aL[3] & Q >= newx3aL[4])
 }
 
 high_threshL
-
 ###### calculate amount of time
 
 time_statsl <- new_dataLx %>%
@@ -617,7 +690,7 @@ if(is.na(newx1aR[1])) {
   low_threshR <- expression(Q >= newx1aR[1] & Q <= newx1aR[2])
   
   ## 2b) if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx1aR)==2 && newx1aR[1] > peakQR || newx1aR[2] < peakQR ) {
+} else if(length(newx1aR)==2 && (newx1aR[1] > peakQR || newx1aR[2] < peakQR) ) {
   # sum the amount of time below the first and above the 2nd threshold
   low_threshR <- expression(Q <= newx1aR[1] & Q >= newx1aR[2])
   
@@ -630,6 +703,17 @@ if(is.na(newx1aR[1])) {
 } else if (length(newx1aR) == 3 && newx1aR[1] < peakQR) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   low_threshR <- expression(Q >= newx1aR[1] & Q <= newx1aR[2] | Q >= newx1aR[3])
+  ## 4a) if 4 threshold values and all are higher than the peak (begins positive slope)
+  
+} else if (length(newx1aR) == 4 && newx1aR[1] < peakQR) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  low_threshR <- expression(Q >= newx1aR[1] & Q <= newx1aR[2] |  Q >= newx1aR[3] & Q <= newx1aR[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx1aR) == 4 && (newx1aR[1] < peakQR && newx1aR[2] < peakQR && newx1aR[3] < peakQR && newx1aR[4] < peakQR || newx1aR[1] > peakQR 
+                                    && newx1aR[2] > peakQR && newx1aR[3] > peakQR && newx1aR[4] > peakQR  || newx1aR[2] < peakQR && newx1aR[3] > peakQR)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  low_threshR <- expression(Q <= newx1aR[1] & Q >= newx1aR[2] |  Q <= newx1aR[3] & Q >= newx1aR[4])
 }
 
 low_threshR
@@ -654,7 +738,7 @@ if(is.na(newx2aR[1])) {
   med_threshR <- expression(Q >= newx2aR[1] & Q <= newx2aR[2])
   
   ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx2aR)==2 && newx2aR[1] > peakQR || newx2aR[2] < peakQR ) {
+} else if(length(newx2aR)==2 && (newx2aR[1] > peakQR || newx2aR[2] < peakQR )) {
   # sum the amount of time below the first and above the 2nd threshold
   med_threshR <- expression(Q <= newx2aR[1] & Q >= newx2aR[2])
   
@@ -667,6 +751,16 @@ if(is.na(newx2aR[1])) {
 } else if (length(newx2aR) == 3 && newx2aR[1] < peakQR) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
   med_threshR <- expression(Q >= newx2aR[1] & Q <= newx2aR[2] | Q >= newx2aR[3])
+  
+} else if (length(newx2aR) == 4 && newx2aR[1] < peakQR) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  med_threshR <- expression(Q >= newx2aR[1] & Q <= newx2aR[2] |  Q >= newx2aR[3] & Q <= newx2aR[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx2aR) == 4 && (newx2aR[1] < peakQR && newx2aR[2] < peakQR && newx2aR[3] < peakQR && newx2aR[4] < peakQR || newx2aR[1] > peakQR 
+                                    && newx2aR[2] > peakQR && newx2aR[3] > peakQR && newx2aR[4] > peakQR  || newx2aR[2] < peakQR && newx2aR[3] > peakQR)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  med_threshR <- expression(Q <= newx2aR[1] & Q >= newx2aR[2] |  Q <= newx2aR[3] & Q >= newx2aR[4])
 }
 
 med_threshR
@@ -691,7 +785,7 @@ if(is.na(newx3aR[1])) {
   high_threshR <- expression(Q >= newx3aR[1] & Q <= newx3aR[2])
   
   ## if 2 threshold values and the first one is higher OR the 2nd one is lower than the peak (negative parabol)
-} else if(length(newx3aR)==2 && newx3aR[1] > peakQR || newx3aR[2] < peakQR ) {
+} else if(length(newx3aR)==2 && (newx3aR[1] > peakQR || newx3aR[2] < peakQR )) {
   # sum the amount of time below the first and above the 2nd threshold
   high_threshR <- expression(Q <= newx3aR[1] & Q >= newx3aR[2])
   
@@ -703,7 +797,17 @@ if(is.na(newx3aR[1])) {
   ## if 3 threshold values and the 1st one is lower then the peak (begins negative slope)
 } else if (length(newx3aR) == 3 && newx3aR[1] < peakQR) {
   # sum the amount of time above the first and below the 2nd threshold and above the 3rd
-  high_threshR <- expression(Q >= newx3aR[1] & Q <= newx3aR[2] | QM >= newx3aR[3])
+  high_threshR <- expression(Q >= newx3aR[1] & Q <= newx3aR[2] | Q >= newx3aR[3])
+  
+} else if (length(newx3aR) == 4 && newx3aR[1] < peakQR) {
+  # sum the amount of time above the first and below the 2nd threshold or above the 3rd and below 2nd
+  high_threshR <- expression(Q >= newx3aR[1] & Q <= newx3aR[2] |  Q >= newx3aR[3] & Q <= newx3aR[4])
+  
+  ## 4b) if 4 threshold values and all are higher than the peak, the 1st one and 2nd are lower, or all are lower  (begins negative slope)
+} else if (length(newx3aR) == 4 && (newx3aR[1] < peakQR && newx3aR[2] < peakQR && newx3aR[3] < peakQR && newx3aR[4] < peakQR || newx3aR[1] > peakQR 
+                                    && newx3aR[2] > peakQR && newx3aR[3] > peakQR && newx3aR[4] > peakQR  || newx3aR[2] < peakQR && newx3aR[3] > peakQR)) {
+  # sum the amount of time above the first and below the 2nd threshold and above the 3rd
+  high_threshR <- expression(Q <= newx3aR[1] & Q >= newx3aR[2] |  Q <= newx3aR[3] & Q >= newx3aR[4])
 }
 
 high_threshR
