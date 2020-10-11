@@ -26,7 +26,7 @@ dev.off()
 
 summary(vel_ptch_mdl <- glm(occurrence ~ vel_m_s, data = velocity, family = "binomial"))
 confint(vel_ptch_mdl)
-# save(vel_ptch_mdl, file = "models/vel_ptch_mdl.rda")
+save(vel_ptch_mdl, file = "models/vel_ptch_mdl.rda")
 
 
 ## upload hydraulic data

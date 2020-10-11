@@ -14,18 +14,6 @@ library(data.table)
 load("input_data/typha_depth.RData")
 
 ### model
-#patch occurrence
-
-png("Figures/Final_curves/Typha_adult_depth.png", width = 700, height = 600)
-
-ggplot(data = depth, mapping = aes(x = depth_cm, y = occurrence))+
-  geom_point(alpha = 0.2, size = 3)+
-  labs(x = "Depth (cm)", y = "Probability of Occurrence")+
-  geom_smooth(method = "lm", formula = y ~ x + I(x^2))+
-  theme(text = element_text(size=25), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), panel.border = element_rect(colour = "black", fill=NA, size=.5))
-
-dev.off()
 
 # head(depth)
 # mean(na.omit(depth$depth_cm))
@@ -38,11 +26,31 @@ summary(dep_ptch_mdl <- lm(occurrence ~ depth_cm + I(depth_cm^2), data = depth))
 
 ## soft bottom reaches
 
-F57C <- read.csv("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas/hydraulic_ts_F57C.csv")
+F57C <- read.csv("input_data/HecRas/hydraulic_ts_F57C.csv")
 # LA8 <- read.csv("input_data/HecRas/hydraulic_ts_LA8.csv")
 # LA11 <- read.csv("input_data/HecRas/hydraulic_ts_LA11.csv")
-# LA20 <- read.csv("input_data/HecRas/hydraulic_ts_LA20_2.csv")
+# LA20_2 <- read.csv("input_data/HecRas/hydraulic_ts_LA20_2.csv")
+# F37B_Low <- read.csv("input_data/HecRas/hydraulic_ts_F37B_Low.csv")
+# LA2 <- read.csv("input_data/HecRas/hydraulic_ts_LA2.csv")
+# LA3 <- read.csv("input_data/HecRas/hydraulic_ts_LA3.csv")
+# LA14 <- read.csv("input_data/HecRas/hydraulic_ts_LA14.csv")
+# F300 <- read.csv("input_data/HecRas/hydraulic_ts_F300.csv")
+# GLEN <- read.csv("input_data/HecRas/hydraulic_ts_GLEN.csv")
+# LA20_1 <- read.csv("input_data/HecRas/hydraulic_ts_LA20.csv")
 
+# N11101250 <- read.csv("input_data/HecRas/hydraulic_ts_11101250.csv")
+# F34D <- read.csv("input_data/HecRas/hydraulic_ts_F34D.csv") ## not soft - just for dates
+
+## go through script one at a time
+
+N11101250 <- N11101250[-1,]
+N11101250 <- N11101250 %>%
+  mutate(Q_ts.datetime = F34D$Q_ts.datetime)
+
+## LA20_2
+LA20_2 <- LA20_2[-1,]
+LA20_2 <- LA20_2 %>%
+  mutate(Q_ts.datetime = F34D$Q_ts.datetime)
 
 ## go through script one at a time
 
@@ -51,31 +59,55 @@ names(hydraul)
 head(hydraul)
 ## select columns
 
-hyd_dep <- hydraul[,c(1:3,5,9,13)]
-colnames(hyd_dep) <-c("DateTime", "node", "Q", "depth_ft_LOB", "depth_ft_MC", "depth_ft_ROB")
+## change some names
+hydraul <- hydraul %>%
+  rename(DateTime = Q_ts.datetime, node = Gage, Q = Flow)
 
-# nas <- which(complete.cases(hyd_dep) == FALSE)
-# hyd_dep[nas,]
-
-## convert unit from feet to meters
-
-hyd_dep <- hyd_dep %>%
+## change names and transform ft to cm
+hyd_dep <- hydraul %>%
+  select(c(DateTime, Q, node, Avg..Vel...ft.s..LOB, Hydr..Depth..ft..LOB,Avg..Vel...ft.s..MC, Hydr..Depth..ft..MC, 
+           Avg..Vel...ft.s..ROB, Hydr..Depth..ft..ROB)) %>%
+  rename(vel_ft_LOB = Avg..Vel...ft.s..LOB, depth_ft_LOB = Hydr..Depth..ft..LOB, vel_ft_MC = Avg..Vel...ft.s..MC,
+         depth_ft_MC = Hydr..Depth..ft..MC, vel_ft_ROB = Avg..Vel...ft.s..ROB, depth_ft_ROB = Hydr..Depth..ft..ROB) %>%
   mutate(depth_cm_LOB = (depth_ft_LOB*0.3048)*100,
          depth_cm_MC = (depth_ft_MC*0.3048)*100,
          depth_cm_ROB = (depth_ft_ROB*0.3048)*100) %>%
+  mutate(vel_m_LOB = (vel_ft_LOB*0.3048),
+         vel_m_MC = (vel_ft_MC*0.3048),
+         vel_m_ROB = (vel_ft_ROB*0.3048)) %>%
   select(-contains("ft")) %>%
   mutate(date_num = seq(1,length(DateTime), 1))
 
-
-## workflow
-## get probabilities for depth at each hourly time step
-## get thresholds i.e. 25, 50, 75%
-
-# ## melt channel position data
-hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num"))
-hyd_dep <- hyd_dep %>% rename(depth_cm = value)
 head(hyd_dep)
-# summary(dep_ptch_mdl)
+
+## create year, month, day and hour columns
+
+hyd_dep <- hyd_dep %>%
+  mutate(month = month(DateTime))%>%
+  mutate(year = year(DateTime))%>%
+  mutate(day = day(DateTime))%>%
+  mutate(hour = hour(DateTime)) %>%
+  mutate(season = ifelse(month == 12 | month == 1 | month == 2 | month == 3 | month == 4| month == 5 | month == 6, 
+                         paste("critical"), paste("non_critical") )) %>%
+  mutate(water_year = ifelse(month == 10 | month == 11 | month == 12, year, year-1))
+
+
+hyd_vel <- hyd_dep %>%
+  select(-contains("depth"))
+head(hyd_vel)
+
+hyd_dep <- hyd_dep %>%
+  select(-contains("vel"))
+head(hyd_dep)
+# ## melt channel position data
+
+hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num", "month", "day", "water_year","year", "hour","season"))
+hyd_vel<-reshape2::melt(hyd_vel, id=c("DateTime","Q", "node", "date_num", "month", "day", "water_year","year", "hour", "season"))
+
+
+# depth -------------------------------------------------------------------
+
+
 
 ## filter data by cross section position
 

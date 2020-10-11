@@ -47,10 +47,31 @@ save(dep_sdlng_mdl, file = "models/dep_sdlng_mdl.rda")
 
 ## soft bottom reaches
 
-F57C <- read.csv("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas/hydraulic_ts_F57C.csv")
+F57C <- read.csv("input_data/HecRas/hydraulic_ts_F57C.csv")
 # LA8 <- read.csv("input_data/HecRas/hydraulic_ts_LA8.csv")
 # LA11 <- read.csv("input_data/HecRas/hydraulic_ts_LA11.csv")
-# LA20 <- read.csv("input_data/HecRas/hydraulic_ts_LA20_2.csv")
+# LA20_2 <- read.csv("input_data/HecRas/hydraulic_ts_LA20_2.csv")
+# F37B_Low <- read.csv("input_data/HecRas/hydraulic_ts_F37B_Low.csv")
+# LA2 <- read.csv("input_data/HecRas/hydraulic_ts_LA2.csv")
+# LA3 <- read.csv("input_data/HecRas/hydraulic_ts_LA3.csv")
+# LA14 <- read.csv("input_data/HecRas/hydraulic_ts_LA14.csv")
+# F300 <- read.csv("input_data/HecRas/hydraulic_ts_F300.csv")
+# GLEN <- read.csv("input_data/HecRas/hydraulic_ts_GLEN.csv")
+# LA20_1 <- read.csv("input_data/HecRas/hydraulic_ts_LA20.csv")
+
+# N11101250 <- read.csv("input_data/HecRas/hydraulic_ts_11101250.csv")
+# F34D <- read.csv("input_data/HecRas/hydraulic_ts_F34D.csv") ## not soft - just for dates
+
+## go through script one at a time
+
+N11101250 <- N11101250[-1,]
+N11101250 <- N11101250 %>%
+  mutate(Q_ts.datetime = F34D$Q_ts.datetime)
+
+## LA20_2
+LA20_2 <- LA20_2[-1,]
+LA20_2 <- LA20_2 %>%
+  mutate(Q_ts.datetime = F34D$Q_ts.datetime)
 
 ## go through script one at a time
 
