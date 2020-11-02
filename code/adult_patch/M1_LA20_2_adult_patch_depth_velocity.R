@@ -192,6 +192,8 @@ new_dataR <- filter(new_data, variable == "depth_cm_ROB")
 load(file="root_interpolation_function.Rdata")
 
 
+
+
 newx1a <- RootLinearInterpolant(new_dataM$Q, new_dataM$prob_fit, 0.25)
 newx1a
 
@@ -496,7 +498,7 @@ med_threshR <-as.expression(do.call("substitute", list(med_threshR[[1]], list(li
 
 high_threshR <- expression_Q(newx3aR, peakQR)
 high_threshR <-as.expression(do.call("substitute", list(high_threshR[[1]], list(limit = as.name("newx3aR")))))
-
+high_threshR
 
 ###### calculate amount of time
 
@@ -874,6 +876,23 @@ new_dataR <- filter(new_data, variable == "vel_m_ROB")
 
 load(file="root_interpolation_function.Rdata")
 
+q_limit_MC <- RootLinearInterpolant(new_dataM$Q, new_dataM$prob_fit, 0.75)
+q_limit_MC
+
+vel_limit_MC <- RootLinearInterpolant(new_dataM$vel_m_s , new_dataM$prob_fit, 0.75)
+vel_limit_MC
+
+q_limit_LOB <- RootLinearInterpolant(new_dataL$Q, new_dataL$prob_fit, 0.75)
+q_limit_LOB
+
+vel_limit_LOB <- RootLinearInterpolant(new_dataL$vel_m_s , new_dataL$prob_fit, 0.75)
+vel_limit_LOB
+
+q_limit_ROB <- RootLinearInterpolant(new_dataR$Q, new_dataR$prob_fit, 0.75)
+q_limit_ROB
+
+vel_limit_ROB <- RootLinearInterpolant(new_dataR$vel_m_s , new_dataR$prob_fit, 0.75)
+vel_limit_ROB
 
 newx1a <- RootLinearInterpolant(new_dataM$Q, new_dataM$prob_fit, 0.25)
 newx1a
@@ -1167,7 +1186,7 @@ time_statsl <- new_dataLx %>%
 
 time_statsl
 
-
+limits
 # time stats - right over bank ---------------------------------------------
 
 ### define expression for low threshold 
@@ -1180,7 +1199,7 @@ med_threshR <-as.expression(do.call("substitute", list(med_threshR[[1]], list(li
 high_threshR <- expression_Q(newx3aR, peakQR)
 high_threshR <-as.expression(do.call("substitute", list(high_threshR[[1]], list(limit = as.name("newx3aR")))))
 
-
+high_threshR
 ###### calculate amount of time
 
 time_statsr <- new_dataRx %>%

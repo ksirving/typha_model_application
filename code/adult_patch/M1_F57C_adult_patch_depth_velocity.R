@@ -834,6 +834,9 @@ range(new_data$prob_fit)
 head(new_data)
 
 
+
+
+
 save(new_data, file="output_data/M1_F57C_typha_adult_patch_velocity_discharge_probability_time_series_red_columns.RData")
 
 # format probability time series ------------------------------------------
