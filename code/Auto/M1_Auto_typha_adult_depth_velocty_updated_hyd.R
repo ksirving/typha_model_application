@@ -33,12 +33,12 @@ load(file="/Users/katieirving/Documents/git/typha_model_application/models/dep_p
 ## upload hydraulic data
 setwd("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas")
 
-h <- list.files(pattern="hydraulic")
+h <- list.files(pattern="predictions")
 length(h) ## 18
 
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
-n=1
+
 for(n in 1: length(h)) {
   
   NodeData <- read.csv(file=paste("input_data/HecRas/", h[n], sep=""))
@@ -61,7 +61,6 @@ for(n in 1: length(h)) {
     rename(Q = Flow) %>%
     mutate(node = NodeName)
   
-  names(hydraul)
   ## convert units and change names - depending on concrete/soft bottom. if/else to determine changes to data
   
   if(length(NodeData) == 8) {
@@ -93,7 +92,7 @@ for(n in 1: length(h)) {
   
   ## take only depth variable
   hyd_dep <- hyd_dep %>% select(DateTime, node, Q, contains("depth"), date_num)
-  head(hyd_dep)
+
   # ## melt channel position data
   hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num"))
   hyd_dep <- hyd_dep %>% rename(depth_cm = value)
@@ -108,7 +107,7 @@ for(n in 1: length(h)) {
   
   
   ## save out
-  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_adult_depth_discharge_probability.RData", sep=""))
+  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_adult_depth_discharge_probability_updated_hyd.RData", sep=""))
   
   
   # format probability time series ------------------------------------------
@@ -129,26 +128,29 @@ for(n in 1: length(h)) {
     mutate(hour = hour(DateTime)) %>%
     mutate(water_year = ifelse(month == 10 | month == 11 | month == 12, year, year-1))
   
-  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_depth_adult_discharge_probs_2010_2017_TS.RData", sep=""))
+  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_depth_adult_discharge_probs_2010_2017_TS_updated_hyd.RData", sep=""))
   
   ### define dataframes for 2nd loop
   
-  ## define positions
+  
+  # define positions
   positions <- unique(all_data$variable)
   
   ## Q Limits
-  limits <- as.data.frame(matrix(ncol=length(positions), nrow=2)) 
-  limits$Type<-c("Q_limit1", "Q_limit2")
+  limits <- as.data.frame(matrix(ncol=length(positions), nrow=12)) 
+  limits$Type<-c("Q_limit")
   
-  H_limits <- as.data.frame(matrix(ncol=length(positions), nrow=2)) 
-  H_limits$Type<-c("Hydraulic_limit1", "Hydraulic_limit2")
+  H_limits <- as.data.frame(matrix(ncol=length(positions), nrow=12)) 
+  H_limits$Type<-c("Hydraulic_limit")
   
-  NodeName <- str_split(h[n], "_", 3)[[1]]
-  NodeName <- NodeName[1]
+  ## calculation
+  Q_Calc <- as.data.frame(matrix(ncol=3, nrow=3 ))
+  names(Q_Calc) <- c("Low", "Medium", "High")
+  
   
   time_statsx <- NULL
   days_data <- NULL
-  p=1
+
   # probability as a function of discharge -----------------------------------
   
   for(p in 1:length(positions)) {
@@ -163,7 +165,7 @@ for(n in 1: length(h)) {
     ## bind shallow and deeper depths by 0.1 - 10cm & 120cm
     ## change all prob_fit lower than 0.1 to 0.1
 
-    
+    range(new_data$prob_fit)
     peak <- new_data %>%
       filter(prob_fit == max(prob_fit)) #%>%
     
@@ -177,12 +179,12 @@ for(n in 1: length(h)) {
       newx1a <- min(new_data$Q)
       hy_lim1 <- min(new_data$depth_cm)
     } else {
-      newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 25)
-      hy_lim1 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 25)
+      newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.25)
+      hy_lim1 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.25)
     }
     
-    newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 50)
-    hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 50)
+    newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.50)
+    hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.50)
     
     if(length(newx2a) > 4) {
       newx2a <- c(newx2a[1], newx2a[length(newx2a)])
@@ -193,12 +195,12 @@ for(n in 1: length(h)) {
     }
     
     
-    if(min(new_data$prob_fit)>75) {
+    if(min(new_data$prob_fit)>0.75) {
       newx3a <- min(new_data$Q)
       hy_lim3 <- min(new_data$depth_cm)
     } else {
-      newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 75)
-      hy_lim3 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 75)
+      newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.75)
+      hy_lim3 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.75)
     }
     
     if(length(newx3a) > 4) {
@@ -244,9 +246,10 @@ for(n in 1: length(h)) {
     high_thresh <- expression_Q(newx3a, peakQ)
     high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
     
+    Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
     ###### calculate amount of time
-    
+
     time_stats <- new_datax %>%
       dplyr::group_by(water_year) %>%
       dplyr::mutate(Low = sum(eval(low_thresh))/length(DateTime)*100) %>%
@@ -280,13 +283,20 @@ for(n in 1: length(h)) {
     
   } ## end 2nd loop
   
+  Q_Calc$Position <- positions
+  
+  Q_Calc <- Q_Calc %>%
+    mutate(Species ="Typha", Life_Stage = "Adult", Hydraulic = "Depth", Node = NodeName)
+  
+  write.csv(Q_Calc, paste("output_data/M1_",NodeName,"_Typha_adult_depth_Q_calculation_updated_hyd.csv", sep=""))
+  
   ## limits
   limits <- rbind(limits, H_limits)
-  
+
   limits <- limits %>%
     mutate(Species ="Typha", Life_Stage = "Adult", Hydraulic = "Depth", Node = NodeName)
-  limits
-  write.csv(limits, paste("output_data/M1_",NodeName,"_Typha_adult_depth_Q_limits.csv", sep=""))
+
+  write.csv(limits, paste("output_data/M1_",NodeName,"_Typha_adult_depth_Q_limits_updated_hyd.csv", sep=""))
   
   
   ## percentage time
@@ -295,7 +305,7 @@ for(n in 1: length(h)) {
     rename( Probability_Threshold = variable) %>%
     mutate(Species ="Typha", Life_Stage = "Adult", Hydraulic = "Depth", Node = NodeName)
   
-  write.csv(melt_time, paste("output_data/M1_", NodeName, "_Typha_adult_depth_time_stats.csv", sep=""))
+  write.csv(melt_time, paste("output_data/M1_", NodeName, "_Typha_adult_depth_time_stats_updated_hyd.csv", sep=""))
   
   ### days per month
   days_data <- select(days_data, c(Q, month, water_year, day, ID01, Low, ID02, Medium, ID03, High, position, DateTime, node) )# all probs
@@ -372,7 +382,7 @@ for(n in 1: length(h)) {
   
   
   ## save df
-  write.csv(melt_days, paste("output_data/M1_", NodeName, "_Typha_adult_depth_total_days_long.csv", sep="") )
+  write.csv(melt_days, paste("output_data/M1_", NodeName, "_Typha_adult_depth_total_days_long_updated_hyd.csv", sep="") )
   
 } ## end 1st loop
 
@@ -386,7 +396,7 @@ load(file="/Users/katieirving/Documents/git/typha_model_application/models/vel_p
 ## upload hydraulic data
 setwd("input_data/HecRas")
 
-h <- list.files(pattern="hydraulic")
+h <- list.files(pattern="predictions")
 length(h) ## 18
 
 ## set wd back to main
@@ -465,17 +475,13 @@ for(n in 1: length(h)) {
   
   ## join depth data to vel df
   hyd_vel <- left_join(hyd_vel, hyd_dep, by="date_num")
-
-  
-  ## change NAs to 0 in concrete overbanks
-  hyd_vel[is.na(hyd_vel)] <- 0
   
   all_data <- hyd_vel %>%
     mutate(prob_fit = predict(vel_ptch_mdl, newdata = hyd_vel, type="response")) %>%
     mutate(prob_fit = ifelse(prob_fit<=0, 0, prob_fit)) ## predicts negative percentages - cut off at 0 for quick fix
   
   ## save out
-  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_adult_velocity_discharge_probability.RData", sep=""))
+  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_adult_velocity_discharge_probability_updated_hyd.RData", sep=""))
   
   
   # format probability time series ------------------------------------------
@@ -496,7 +502,7 @@ for(n in 1: length(h)) {
     mutate(hour = hour(DateTime)) %>%
     mutate(water_year = ifelse(month == 10 | month == 11 | month == 12, year, year-1))
   
-  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_velocity_adult_discharge_probs_2010_2017_TS.RData", sep=""))
+  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_velocity_adult_discharge_probs_2010_2017_TS_updated_hyd.RData", sep=""))
   
   ### define dataframes for 2nd loop
   
@@ -509,6 +515,10 @@ for(n in 1: length(h)) {
   H_limits <- as.data.frame(matrix(ncol=length(positions), nrow=12)) 
   H_limits$Type<-c("Hydraulic_limit")
   
+  ## calculation
+  Q_Calc <- as.data.frame(matrix(ncol=3, nrow=3 ))
+  names(Q_Calc) <- c("Low", "Medium", "High")
+  
   time_statsx <- NULL
   days_data <- NULL
   
@@ -519,7 +529,7 @@ for(n in 1: length(h)) {
     
     new_data <- all_data %>% 
       filter(variable  == positions[p])
-    
+    names(new_data)
     ## define position
     PositionName <- str_split(positions[p], "_", 3)[[1]]
     PositionName <- PositionName[3]
@@ -536,7 +546,7 @@ for(n in 1: length(h)) {
     
     ## find roots for each probability
     newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.25)
-    hy_lim1 <- RootLinearInterpolant(new_data$Velocity, new_data$prob_fit, 0.25)
+    hy_lim1 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.25)
     
     
     if(length(newx1a) > 4) {
@@ -548,7 +558,7 @@ for(n in 1: length(h)) {
     }
     
     newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.50)
-    hy_lim2 <- RootLinearInterpolant(new_data$Velocity, new_data$prob_fit, 0.5)
+    hy_lim2 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.5)
     
     if(length(newx2a) > 4) {
       newx2a <- c(newx2a[1], newx2a[length(newx2a)])
@@ -560,10 +570,10 @@ for(n in 1: length(h)) {
     
     if(min(new_data$prob_fit)>0.75) {
       newx3a <- min(new_data$Q)
-      hy_lim3 <- min(new_data$Velocity)
+      hy_lim3 <- min(new_data$vel_m_s)
     } else {
       newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.75)
-      hy_lim3 <- RootLinearInterpolant(new_data$Velocity, new_data$prob_fit, 0.75)
+      hy_lim3 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.75)
     }
     
     if(length(newx3a) > 4) {
@@ -612,6 +622,7 @@ for(n in 1: length(h)) {
     high_thresh <- expression_Q(newx3a, peakQ)
     high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
     
+    Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
     ###### calculate amount of time
     
@@ -649,79 +660,28 @@ for(n in 1: length(h)) {
   } ## end 2nd loop
   
   ## limits
-  limits <- rbind(limits, H_limits)
+  Q_Calc$Position <- positions
   
+  Q_Calc <- Q_Calc %>%
+    mutate(Species ="Typha", Life_Stage = "Adult", Hydraulic = "Velocity", Node = NodeName)
+  
+  write.csv(Q_Calc, paste("output_data/M1_",NodeName,"_Typha_adult_velocity_Q_calculation_updated_hyd.csv", sep=""))
+  
+  limits <- rbind(limits, H_limits)
+
   ## note that 0.1 upper/lower limit is max/min Q to adhere to 0.1 bound
   limits <- limits %>%
     mutate(Species ="Typha", Life_Stage = "Adult", Hydraulic = "Velocity", Node = NodeName)
-  write.csv(limits, paste("output_data/M1_",NodeName,"_Typha_adult_velocity_Q_limits.csv", sep=""))
+  write.csv(limits, paste("output_data/M1_",NodeName,"_Typha_adult_velocity_Q_limits_updated_hyd.csv", sep=""))
   
-  ## plot thresholds
-  file_name = paste("figures/Application_curves/Velocity/", NodeName, "_adult_depth_prob_Q_thresholds.png", sep ="")
-  
-  png(file_name, width = 500, height = 600)
-  
-  ggplot(all_data, aes(x = Q, y=prob_fit)) +
-    geom_line(aes(group = variable, lty = variable)) +
-    scale_linetype_manual(values= c("dotted", "solid", "dashed"))+
-    #                       name="Cross\nSection\nPosition",
-    #                       breaks=c("depth_cm_LOB", "depth_cm_MC", "depth_cm_ROB"),
-    #                         labels = c("LOB", "MC", "ROB")) +
-    
-    facet_wrap(~variable, scales="free_x", nrow=3, labeller=labeller(variable = labels)) +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.25, x=limits[1,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.25, x=limits[2,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.25, x=limits[3,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.25, x=limits[4,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.50, x=limits[5,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.50, x=limits[6,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.50, x=limits[7,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.50, x=limits[8,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.75, x=limits[9,2]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.75, x=limits[10,2]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.75, x=limits[11,2]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_MC"), aes(y=0.75, x=limits[12,2]), color="blue") +
-    
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.25, x=limits[1,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.25, x=limits[2,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.25, x=limits[3,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.25, x=limits[4,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.50, x=limits[5,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.50, x=limits[6,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.50, x=limits[7,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.50, x=limits[8,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.75, x=limits[9,1]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.75, x=limits[10,1]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.75, x=limits[11,1]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_LOB"), aes(y=0.75, x=limits[12,1]), color="blue") +
-    
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.25, x=limits[1,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.25, x=limits[2,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.25, x=limits[3,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.25, x=limits[4,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.50, x=limits[5,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.50, x=limits[6,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.50, x=limits[7,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.50, x=limits[8,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.75, x=limits[9,3]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.75, x=limits[10,3]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.75, x=limits[11,3]), color="blue") +
-    geom_point(data = subset(all_data, variable =="vel_m_ROB"), aes(y=0.75, x=limits[12,3]), color="blue") +
-    
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
-    labs(title = paste(NodeName, ": Adult/Velocity: Probability ~ Q", sep=""),
-         y = "Probability",
-         x = "Q (cfs)") #+ theme_bw(base_size = 15)
-  
-  dev.off()
-  
+ 
   ## percentage time
   melt_time<-reshape2::melt(time_statsx, id=c("season", "position", "water_year", "Node"))
   melt_time <- melt_time %>% 
     rename( Probability_Threshold = variable) %>%
     mutate(Species ="Typha", Life_Stage = "Adult", Hydraulic = "Velocity", Node = NodeName)
   
-  write.csv(melt_time, paste("output_data/M1_", NodeName, "_Typha_adult_velocity_time_stats.csv", sep=""))
+  write.csv(melt_time, paste("output_data/M1_", NodeName, "_Typha_adult_velocity_time_stats_updated_hyd.csv", sep=""))
   
   ### days per month
   days_data <- select(days_data, c(Q, month, water_year, day, ID01, Low, ID02, Medium, ID03, High, position, DateTime, node) )# all probs
@@ -798,7 +758,7 @@ for(n in 1: length(h)) {
   
   
   ## save df
-  write.csv(melt_days, paste("output_data/M1_", NodeName, "_Typha_adult_velocity_total_days_long.csv", sep="") )
+  write.csv(melt_days, paste("output_data/M1_", NodeName, "_Typha_adult_velocity_total_days_long_updated_hyd.csv", sep="") )
   
 } ## end 1st loop
 
@@ -811,7 +771,7 @@ load(file="/Users/katieirving/Documents/git/typha_model_application/models/dep_s
 ## upload hydraulic data
 setwd("input_data/HecRas")
 
-h <- list.files(pattern="hydraulic")
+h <- list.files(pattern="predictions")
 length(h) ## 20
 h
 ## set wd back to main
@@ -822,39 +782,50 @@ for(n in 1: length(h)) {
   NodeData <- read.csv(file=paste("input_data/HecRas/", h[n], sep=""))
   F34D <- read.csv("input_data/HecRas/hydraulic_ts_F34D.csv") ## for dates
   
+  NodeName <- str_split(h[n], "_", 3)[[1]]
+  NodeName <- NodeName[1]
   ## format hydraulic data
+  cat(paste("Running Node", NodeName))
   
   NodeData <- NodeData %>%
-    mutate(Q_ts.datetime = F34D$Q_ts.datetime)
+    mutate(DateTime = F34D$Q_ts.datetime)
   
   hydraul <-NodeData[,-1]
-  
+  names(hydraul)
   
   ## change some names
   hydraul <- hydraul %>%
-    rename(DateTime = Q_ts.datetime, node = Gage, Q = Flow)
-  
-  ## define node name
-  NodeName <- unique(hydraul$node)
+    rename(Q = Flow) %>%
+    mutate(node = NodeName)
   
   ## convert units and change names
   
-  hyd_dep <- hydraul %>%
-    mutate(depth_cm_LOB = (Hydr..Depth..ft..LOB*0.3048)*100,
-           depth_cm_MC = (Hydr..Depth..ft..MC*0.3048)*100,
-           depth_cm_ROB = (Hydr..Depth..ft..ROB*0.3048)*100) %>%
-    mutate(shear_pa_LOB = (Shear..lb.sq.ft..LOB/0.020885),
-           shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885),
-           shear_pa_ROB = (Shear..lb.sq.ft..ROB/0.020885)) %>%
-    mutate(sp_w_LOB = (Shear..lb.sq.ft..LOB*4.44822)/0.3048,
-           sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048,
-           sp_w_ROB = (Shear..lb.sq.ft..ROB*4.44822)/0.3048) %>%
-    mutate(vel_m_LOB = (Avg..Vel...ft.s..LOB*0.3048),
-           vel_m_MC = (Avg..Vel...ft.s..MC*0.3048),
-           vel_m_ROB = (Avg..Vel...ft.s..ROB*0.3048)) %>%
-    select(-contains("ft")) %>%
-    mutate(date_num = seq(1,length(DateTime), 1))
-  
+  if(length(NodeData) == 8) {
+    hyd_dep <- hydraul %>%
+      mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
+      mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
+      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
+      mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
+      select(-contains("ft")) %>%
+      mutate(date_num = seq(1,length(DateTime), 1))
+  } else {
+    hyd_dep <- hydraul %>%
+      mutate(depth_cm_LOB = (Max..Depth..ft..LOB*0.3048)*100,
+             depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100,
+             depth_cm_ROB = (Max..Depth..ft..ROB*0.3048)*100) %>%
+      mutate(shear_pa_LOB = (Shear..lb.sq.ft..LOB/0.020885),
+             shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885),
+             shear_pa_ROB = (Shear..lb.sq.ft..ROB/0.020885)) %>%
+      mutate(sp_w_LOB = (Shear..lb.sq.ft..LOB*4.44822)/0.3048,
+             sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048,
+             sp_w_ROB = (Shear..lb.sq.ft..ROB*4.44822)/0.3048) %>%
+      mutate(vel_m_LOB = (Avg..Vel...ft.s..LOB*0.3048),
+             vel_m_MC = (Avg..Vel...ft.s..MC*0.3048),
+             vel_m_ROB = (Avg..Vel...ft.s..ROB*0.3048)) %>%
+      select(-contains("ft")) %>%
+      mutate(date_num = seq(1,length(DateTime), 1))
+    
+  }
   
   ## take only depth variable
   hyd_dep <- hyd_dep %>% select(DateTime, node, Q, contains("depth"), date_num)
@@ -862,23 +833,7 @@ for(n in 1: length(h)) {
   # ## melt channel position data
   hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num"))
   hyd_dep <- hyd_dep %>% rename(depth_cm = value)
-  labels <- c(depth_cm_LOB = "Left Over Bank", depth_cm_MC = "Main Channel", depth_cm_ROB = "Right Over Bank")
   
-  # ### node figure for depth ~ Q
-  # file_name <- paste("figures/Application_curves/nodes/", NodeName, "_Depth_Q.png", sep="")
-  # png(file_name, width = 500, height = 600)
-  # 
-  # ggplot(hyd_dep, aes(x = Q, y=value)) +
-  #   geom_line(aes( group = variable, lty = variable)) +
-  #   scale_linetype_manual(values= c("dotted", "solid", "dashed"),
-  #                         breaks=c("depth_cm_LOB", "depth_cm_MC", "depth_cm_ROB"))+
-  #   facet_wrap(~variable, scales="free_x", nrow=3, labeller=labeller(variable = labels)) +
-  #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
-  #   labs(title = paste(NodeName, ": Depth ~ Q"),
-  #        y = "Depth (cm)",
-  #        x = "Q (cfs)") #+ theme_bw(base_size = 15)
-  # 
-  # dev.off()
   
   ## change NAs to 0 in concrete overbanks
   hyd_dep[is.na(hyd_dep)] <- 0
@@ -886,12 +841,10 @@ for(n in 1: length(h)) {
   all_data <- hyd_dep %>%
     mutate(prob_fit = predict(dep_sdlng_mdl, newdata = hyd_dep, type="response")) %>%
     mutate(prob_fit = ifelse(prob_fit<=0, 0, prob_fit)) ## predicts negative percentages - cut off at 0 for quick fix
-  
-  
-  
+
   
   ## save out
-  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_Seedling_depth_discharge_probability.RData", sep=""))
+  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_Seedling_depth_discharge_probability_updated_hyd.RData", sep=""))
   
   
   # format probability time series ------------------------------------------
@@ -912,30 +865,33 @@ for(n in 1: length(h)) {
     mutate(hour = hour(DateTime)) %>%
     mutate(water_year = ifelse(month == 10 | month == 11 | month == 12, year, year-1))
   
-  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_depth_Seedling_discharge_probs_2010_2017_TS.RData", sep=""))
+  save(all_data, file=paste("output_data/M1_", NodeName, "_Typha_depth_Seedling_discharge_probs_2010_2017_TS_updated_hyd.RData", sep=""))
   
   ### define dataframes for 2nd loop
   
+  ## define positions
+  positions <- unique(all_data$variable)
   ## Q Limits
-  limits <- as.data.frame(matrix(ncol=3, nrow=12)) %>%
-    rename(LOB = V1, MC = V2, ROB = V3) 
-  rownames(limits)<-c("Low_Prob_1", "Low_Prob_2", "Low_Prob_3", "Low_Prob_4",
-                      "Med_Prob_1", "Med_Prob_2", "Med_Prob_3", "Med_Prob_4",
-                      "High_Prob_1", "High_Prob_2", "High_Prob_3", "High_Prob_4")
+  limits <- as.data.frame(matrix(ncol=length(positions), nrow=12)) 
+  limits$Type<-c("Q_limit")
+  
+  H_limits <- as.data.frame(matrix(ncol=length(positions), nrow=12)) 
+  H_limits$Type<-c("Hydraulic_limit")
+  
+  ## calculation
+  Q_Calc <- as.data.frame(matrix(ncol=3, nrow=3 ))
+  names(Q_Calc) <- c("Low", "Medium", "High")
   
   time_statsx <- NULL
   days_data <- NULL
   
-  ## define positions
-  positions <- unique(all_data$variable)
-  p=1
   # probability as a function of discharge -----------------------------------
   
   for(p in 1:length(positions)) {
     
     new_data <- all_data %>% 
       filter(variable  == positions[p])
-    head(new_data)
+
     ## define position
     PositionName <- str_split(positions[p], "_", 3)[[1]]
     PositionName <- PositionName[3]
@@ -948,44 +904,55 @@ for(n in 1: length(h)) {
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- filter(new_data, depth_cm >= 0.1)
+    min_limit <- filter(new_data, depth_cm >= 0.03)
     min_limit <- min(min_limit$Q)
     
-    ## Main channel curves
-    
-    ## find roots for each probability
-    newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 25)
-    newx1a 
+    if(min(new_data$prob_fit)>25) {
+      newx1a <- min(new_data$Q)
+      hy_lim1 <- min(new_data$depth_cm)
+    } else {
+      newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 25)
+      hy_lim1 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 25)
+    }
     
     newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 50)
-    
+    hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 50)
     
     if(length(newx2a) > 4) {
       newx2a <- c(newx2a[1], newx2a[length(newx2a)])
+      hy_lim2<- c(hy_lim2[1], hy_lim2[length(hy_lim2)])
     } else {
       newx2a <- newx2a
+      hy_lim2 <- hy_lim2
     }
     
     newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 75)
+    hy_lim3 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 75)
     
     if(min(new_data$prob_fit)>75) {
       newx3a <- min(new_data$Q)
+      hy_lim3 <- min(new_data$depth_cm)
     } else {
       newx3a <- newx3a
+      hy_lim3 <- hy_lim3
     }
     
     if(length(newx3a) > 4) {
       newx3a <- c(newx3a[1], newx3a[length(newx3a)])
+      hy_lim3<- c(hy_lim3[1], hy_lim3[length(hy_lim3)])
     } else {
       newx3a <- newx3a
+      hy_lim3 <- hy_lim3
     }
-    
-    
     
     ## MAKE DF OF Q LIMITS
     limits[,p] <- c(newx1a[1], newx1a[2],newx1a[3], newx1a[4],
                     newx2a[1], newx2a[2],newx2a[3], newx2a[4], 
                     newx3a[1], newx3a[2],newx3a[3],newx3a[4])
+    
+    H_limits[,p] <- c(hy_lim1[1], hy_lim1[2], hy_lim1[3], hy_lim1[4],
+                      hy_lim2[1],hy_lim2[2],hy_lim2[3], hy_lim2[4], 
+                      hy_lim3[1], hy_lim3[2],hy_lim3[3],hy_lim3[4])
     
     # create year_month column       
     new_datax <- new_data %>% unite(month_year, c(water_year,month), sep="-", remove=F) 
@@ -1014,6 +981,7 @@ for(n in 1: length(h)) {
     high_thresh <- expression_Q(newx3a, peakQ)
     high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
     
+    Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
     ###### calculate amount of time
     
@@ -1050,71 +1018,20 @@ for(n in 1: length(h)) {
     
   } ## end 2nd loop
   
+  Q_Calc$Position <- positions
+  
+  Q_Calc <- Q_Calc %>%
+    mutate(Species ="Typha", Life_Stage = "Seedling", Hydraulic = "Depth", Node = NodeName)
+  
+  write.csv(Q_Calc, paste("output_data/C1_",NodeName,"_Typha_Seedling_depth_Q_calculation_updated_hyd.csv", sep=""))
+  
   ## limits
-  ## note that 0.1 upper/lower limit is max/min Q to adhere to 0.1 bound
+  limits <- rbind(limits, H_limits)
+  
   limits <- limits %>%
     mutate(Species ="Typha", Life_Stage = "Seedling", Hydraulic = "Depth", Node = NodeName)
-  limits
-  write.csv(limits, paste("output_data/M1_",NodeName,"_Typha_Seedling_depth_Q_limits.csv", sep=""))
-  
-  
-  file_name = paste("figures/Application_curves/Depth/", NodeName, "_Typha_Seedling_depth_prob_Q_thresholds.png", sep ="")
-  
-  png(file_name, width = 500, height = 600)
-  
-  ggplot(all_data, aes(x = Q, y=prob_fit)) +
-    geom_line(aes(group = variable, lty = variable)) +
-    scale_linetype_manual(values= c("dotted", "solid", "dashed"))+
-    #                       name="Cross\nSection\nPosition",
-    #                       breaks=c("depth_cm_LOB", "depth_cm_MC", "depth_cm_ROB"),
-    #                         labels = c("LOB", "MC", "ROB")) +
-    
-    facet_wrap(~variable, scales="free_x", nrow=3, labeller=labeller(variable = labels)) +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=25, x=limits[1,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=25, x=limits[2,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=25, x=limits[3,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=25, x=limits[4,2]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=50, x=limits[5,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=50, x=limits[6,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=50, x=limits[7,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=50, x=limits[8,2]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=75, x=limits[9,2]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=75, x=limits[10,2]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=75, x=limits[11,2]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_MC"), aes(y=75, x=limits[12,2]), color="blue") +
-    
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=25, x=limits[1,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=25, x=limits[2,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=25, x=limits[3,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=25, x=limits[4,1]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=50, x=limits[5,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=50, x=limits[6,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=50, x=limits[7,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=50, x=limits[8,1]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=75, x=limits[9,1]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=75, x=limits[10,1]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=75, x=limits[11,1]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_LOB"), aes(y=75, x=limits[12,1]), color="blue") +
-    
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=25, x=limits[1,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=25, x=limits[2,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=25, x=limits[3,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=25, x=limits[4,3]), color="green") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=50, x=limits[5,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=50, x=limits[6,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=50, x=limits[7,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=50, x=limits[8,3]), color="red") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=75, x=limits[9,3]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=75, x=limits[10,3]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=75, x=limits[11,3]), color="blue") +
-    geom_point(data = subset(all_data, variable =="depth_cm_ROB"), aes(y=75, x=limits[12,3]), color="blue") +
-    
-    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
-    labs(title = paste(NodeName, ": Seedling/Depth: Probability ~ Q", sep=""),
-         y = "Probability",
-         x = "Q (cfs)") #+ theme_bw(base_size = 15)
-  
-  dev.off()
+
+  write.csv(limits, paste("output_data/M1_",NodeName,"_Typha_Seedling_depth_Q_limits_updated_hyd.csv", sep=""))
   
   ## percentage time
   melt_time<-reshape2::melt(time_statsx, id=c("season", "position", "water_year", "Node"))
@@ -1122,7 +1039,7 @@ for(n in 1: length(h)) {
     rename( Probability_Threshold = variable) %>%
     mutate(Species ="Typha", Life_Stage = "Seedling", Hydraulic = "Depth", Node = NodeName)
   
-  write.csv(melt_time, paste("output_data/M1_", NodeName, "_Typha_Seedling_depth_time_stats.csv", sep=""))
+  write.csv(melt_time, paste("output_data/M1_", NodeName, "_Typha_Seedling_depth_time_stats_updated_hyd.csv", sep=""))
   
   ### days per month
   days_data <- select(days_data, c(Q, month, water_year, day, ID01, Low, ID02, Medium, ID03, High, position, DateTime, node) )# all probs
@@ -1199,7 +1116,7 @@ for(n in 1: length(h)) {
   
   
   ## save df
-  write.csv(melt_days, paste("output_data/M1_", NodeName, "_Typha_Seedling_depth_total_days_long.csv", sep="") )
+  write.csv(melt_days, paste("output_data/M1_", NodeName, "_Typha_Seedling_depth_total_days_long_updated_hyd.csv", sep="") )
   
 } ## end 1st loop
 
