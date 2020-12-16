@@ -170,12 +170,11 @@ for(n in 1: length(h)) {
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- filter(new_data, depth_cm >= 0.03)
-    min_limit <- min(min_limit$Q)
+    min_limit <- 0
     
     ## Main channel curves
     
-    if(min(new_data$prob_fit)>25) {
+    if(min(new_data$prob_fit)>0.25) {
       newx1a <- min(new_data$Q)
       hy_lim1 <- min(new_data$depth_cm)
     } else {
@@ -228,17 +227,17 @@ for(n in 1: length(h)) {
     non_critical <- c(1:3, 10:12) 
     critical <- c(4:9) 
     
-    new_datax <- new_datax %>%
+    new_datax <- new_data %>%
       mutate(season = ifelse(month %in% non_critical, "non_critical", "critical") )
     
     ## define equation for roots
     ## produces percentage of time for each year and season within year for each threshold
     
     ## Main channel curves
-    
-    
+
     low_thresh <- expression_Q(newx1a, peakQ) 
     low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("newx1a")))))
+    # low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(">" = as.symbol(">=")))))
     
     med_thresh <- expression_Q(newx2a, peakQ)
     med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("newx2a")))))
@@ -776,7 +775,7 @@ length(h) ## 20
 h
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
-n=1
+n
 for(n in 1: length(h)) {
   
   NodeData <- read.csv(file=paste("input_data/HecRas/", h[n], sep=""))
@@ -944,7 +943,7 @@ for(n in 1: length(h)) {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
     }
-    
+ 
     ## MAKE DF OF Q LIMITS
     limits[,p] <- c(newx1a[1], newx1a[2],newx1a[3], newx1a[4],
                     newx2a[1], newx2a[2],newx2a[3], newx2a[4], 

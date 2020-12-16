@@ -12,7 +12,7 @@ expression_Q <- function(limit, curve) {
     ## 1b) if 1 threshold value and it's higher than the peak (descending slope)
   } else if (length(limit)==1 && limit >= curve){
     # sum the amount of time below the threshold
-    expression_limit <- expression(Q > min_limit & Q <= limit)
+    expression_limit <- expression(Q >= min_limit & Q <= limit)
     
     ## 2a) if 2 threshold values and the first one is lower than the peak(positive parabol)
   } else if (length(limit)==2 && limit[1] <= curve) { 
