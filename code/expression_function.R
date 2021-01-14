@@ -93,8 +93,8 @@ expression_Q <- function(limit, curve) {
 newx2a
 newx1a
 newx3a
-expression_Q(newx1a, peakQ)
-
+expression_Q(newx2a, peakQ)
+peakQ
 save(expression_Q, file="/Users/katieirving/Documents/git/willow_model_application/expression_Q_limit_function.RData")
 
 

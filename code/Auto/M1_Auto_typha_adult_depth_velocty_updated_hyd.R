@@ -501,7 +501,7 @@ for(n in 1: length(h)) {
   hyd_dep <- hyd_vel %>% select(DateTime, node, Q, contains("depth"), date_num)
   
   
-  ## take only shear & depth (for min_limit) variable
+  ## take only vel (for min_limit) variable
   hyd_vel <- hyd_vel %>% select(DateTime, node, Q, contains( "vel"), date_num)
   
   # ## melt channel position data
