@@ -35,7 +35,8 @@ setwd("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas")
 
 h <- list.files(pattern="predictions")
 length(h) ## 18
-
+h
+n=13
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
 
@@ -152,7 +153,7 @@ for(n in 1: length(h)) {
   days_data <- NULL
 
   # probability as a function of discharge -----------------------------------
-  
+
   for(p in 1:length(positions)) {
     
     new_data <- all_data %>% 
@@ -161,31 +162,61 @@ for(n in 1: length(h)) {
     ## define position
     PositionName <- str_split(positions[p], "_", 3)[[1]]
     PositionName <- PositionName[3]
-    
-    ## bind shallow and deeper depths by 0.1 - 10cm & 120cm
-    ## change all prob_fit lower than 0.1 to 0.1
+  
 
-    range(new_data$prob_fit)
     peak <- new_data %>%
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- 0
+    min_limit <- filter(new_data, depth_cm >= 0.03)
+    min_limit <- min(min_limit$Q)
+    min_limit
     
     ## Main channel curves
     
+    ## low
     if(min(new_data$prob_fit)>0.25) {
-      newx1a <- min(new_data$Q)
+      newx1a <- min_limit
       hy_lim1 <- min(new_data$depth_cm)
     } else {
       newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.25)
       hy_lim1 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.25)
     }
     
-    newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.50)
-    hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.50)
+    if(max(new_data$prob_fit)<0.25) {
+      newx1a <- max(new_data$Q)
+      hy_lim1 <- max(new_data$depth_cm)
+    } else {
+      newx1a <- newx1a
+      hy_lim1 <- hy_lim1
+    }
     
-    if(length(newx2a) > 4) {
+    if(length(newx1a) > 2) {
+      newx1a <- c(newx1a[1], newx1a[length(newx1a)])
+      hy_lim1<- c(hy_lim1[1], hy_lim1[length(hy_lim1)])
+    } else {
+      newx1a <- newx1a
+      hy_lim1 <- hy_lim1
+    }
+    
+    ## medium
+    if(max(new_data$prob_fit)<0.5) {
+      newx2a <- max(new_data$Q)
+      hy_lim2 <- max(new_data$depth_cm)
+    } else {
+      newx2a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.5)
+      hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.5)
+    }
+    
+    if(min(new_data$prob_fit)>0.5) {
+      newx2a <- min_limit
+      hy_lim2 <- min(new_data$depth_cm)
+    } else {
+      newx2a <- newx2a
+      hy_lim2 <- hy_lim2
+    }
+    
+    if(length(newx2a) > 2) {
       newx2a <- c(newx2a[1], newx2a[length(newx2a)])
       hy_lim2<- c(hy_lim2[1], hy_lim2[length(hy_lim2)])
     } else {
@@ -194,15 +225,24 @@ for(n in 1: length(h)) {
     }
     
     
+    ##  high prob of occurrence
     if(min(new_data$prob_fit)>0.75) {
-      newx3a <- min(new_data$Q)
+      newx3a <- min_limit
       hy_lim3 <- min(new_data$depth_cm)
     } else {
       newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.75)
       hy_lim3 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.75)
     }
     
-    if(length(newx3a) > 4) {
+    if(max(new_data$prob_fit)<0.75) {
+      newx3a <- max(new_data$Q)
+      hy_lim2 <- max(new_data$depth_cm)
+    } else {
+      newx3a <- newx3a
+      hy_lim3 <- hy_lim3
+    }
+    
+    if(length(newx3a) > 2) {
       newx3a <- c(newx3a[1], newx3a[length(newx3a)])
       hy_lim3<- c(hy_lim3[1], hy_lim3[length(hy_lim3)])
     } else {
@@ -210,6 +250,7 @@ for(n in 1: length(h)) {
       hy_lim3 <- hy_lim3
     }
     
+
     ## MAKE DF OF Q LIMITS
     limits[,p] <- c(newx1a[1], newx1a[2],newx1a[3], newx1a[4],
                     newx2a[1], newx2a[2],newx2a[3], newx2a[4], 
@@ -238,9 +279,11 @@ for(n in 1: length(h)) {
     low_thresh <- expression_Q(newx1a, peakQ) 
     low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("newx1a")))))
     # low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(">" = as.symbol(">=")))))
+   
     
     med_thresh <- expression_Q(newx2a, peakQ)
     med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("newx2a")))))
+
     
     high_thresh <- expression_Q(newx3a, peakQ)
     high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
@@ -454,26 +497,21 @@ for(n in 1: length(h)) {
     
   }
   
-  
-  ## take only depth variable for min limit
+  # take only depth variable for min limit
   hyd_dep <- hyd_vel %>% select(DateTime, node, Q, contains("depth"), date_num)
   
-  hyd_dep<-reshape2::melt(hyd_dep, id=c("DateTime","Q", "node", "date_num"))
-  hyd_dep <- hyd_dep %>%
-    mutate(depth_cm = value) %>%
-    select(date_num, depth_cm)
   
-  ## take only depth variable
-  hyd_vel <- hyd_vel %>% select(DateTime, node, Q, contains("vel"), date_num)
+  ## take only shear & depth (for min_limit) variable
+  hyd_vel <- hyd_vel %>% select(DateTime, node, Q, contains( "vel"), date_num)
   
   # ## melt channel position data
   hyd_vel<-reshape2::melt(hyd_vel, id=c("DateTime","Q", "node", "date_num"))
-  hyd_vel <- rename(hyd_vel, vel_m_s = value)
-  ## change NAs to 0 in concrete overbanks
-  hyd_vel[is.na(hyd_vel)] <- 0
+
   
-  ## join depth data to vel df
-  hyd_vel <- left_join(hyd_vel, hyd_dep, by="date_num")
+  hyd_vel <- hyd_vel %>%
+    # filter(variable %in% c("shear_pa_LOB", "shear_pa_MC", "shear_pa_ROB")) %>%
+    rename(vel_m_s = value)
+
   
   all_data <- hyd_vel %>%
     mutate(prob_fit = predict(vel_ptch_mdl, newdata = hyd_vel, type="response")) %>%
@@ -521,63 +559,104 @@ for(n in 1: length(h)) {
   time_statsx <- NULL
   days_data <- NULL
   
-
+p=1
   # probability as a function of discharge -----------------------------------
   
   for(p in 1:length(positions)) {
     
     new_data <- all_data %>% 
       filter(variable  == positions[p])
-    names(new_data)
+
     ## define position
     PositionName <- str_split(positions[p], "_", 3)[[1]]
     PositionName <- PositionName[3]
     
-    ## bind shallow and deeper depths by 0.1 - 10cm & 120cm
-    ## change all prob_fit lower than 0.1 to 0.1
+    new_dataD <- hyd_dep %>% 
+      select(DateTime, node, Q, contains(PositionName)) 
     
+    colnames(new_dataD)[4] <- "depth_cm"
+    
+    ## get peak of curve
     peak <- new_data %>%
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- filter(new_data, depth_cm >0.03)
+    min_limit <- filter(new_dataD, depth_cm >0.03)
     min_limit <- min(min_limit$Q)
     
-    ## find roots for each probability
-    newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.25)
-    hy_lim1 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.25)
+    ## low
+    if(min(new_data$prob_fit)>0.25) {
+      newx1a <- min_limit
+      hy_lim1 <- min(new_data$vel_m_s)
+    } else {
+      newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.25)
+      hy_lim1 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.25)
+    }
     
-    
-    if(length(newx1a) > 4) {
-      newx1a <- c(newx1a[1], newx1a[length(newx1a)])
-      hy_lim1 <- c(hy_lim1[1], hy_lim1[length(hy_lim1)])
+    if(max(new_data$prob_fit)<0.25) {
+      newx1a <- max(new_data$Q)
+      hy_lim1 <- max(new_data$vel_m_s)
     } else {
       newx1a <- newx1a
       hy_lim1 <- hy_lim1
     }
     
-    newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.50)
-    hy_lim2 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.5)
+    if(length(newx1a) > 2) {
+      newx1a <- c(newx1a[1], newx1a[length(newx1a)])
+      hy_lim1<- c(hy_lim1[1], hy_lim1[length(hy_lim1)])
+    } else {
+      newx1a <- newx1a
+      hy_lim1 <- hy_lim1
+    }
     
-    if(length(newx2a) > 4) {
-      newx2a <- c(newx2a[1], newx2a[length(newx2a)])
-      hy_lim2 <- c(hy_lim2[1], hy_lim2[length(hy_lim2)])
+    ## medium
+    if(max(new_data$prob_fit)<0.5) {
+      newx2a <- max(new_data$Q)
+      hy_lim2 <- max(new_data$vel_m_s)
+    } else {
+      newx2a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.5)
+      hy_lim2 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.5)
+    }
+    
+    if(min(new_data$prob_fit)>0.5) {
+      newx2a <- min_limit
+      hy_lim2 <- min(new_data$vel_m_s)
     } else {
       newx2a <- newx2a
       hy_lim2 <- hy_lim2
     }
     
+    
+    
+    if(length(newx2a) > 2) {
+      newx2a <- c(newx2a[1], newx2a[length(newx2a)])
+      hy_lim2<- c(hy_lim2[1], hy_lim2[length(hy_lim2)])
+    } else {
+      newx2a <- newx2a
+      hy_lim2 <- hy_lim2
+    }
+    
+    
+    ##  high prob of occurrence
     if(min(new_data$prob_fit)>0.75) {
-      newx3a <- min(new_data$Q)
+      newx3a <- min_limit
       hy_lim3 <- min(new_data$vel_m_s)
     } else {
       newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.75)
       hy_lim3 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.75)
     }
     
-    if(length(newx3a) > 4) {
+    if(max(new_data$prob_fit)<0.75) {
+      newx3a <- max(new_data$Q)
+      hy_lim2 <- max(new_data$vel_m_s)
+    } else {
+      newx3a <- newx3a
+      hy_lim3 <- hy_lim3
+    }
+    
+    if(length(newx3a) > 2) {
       newx3a <- c(newx3a[1], newx3a[length(newx3a)])
-      hy_lim3 <- c(hy_lim3[1], hy_lim3[length(hy_lim3)])
+      hy_lim3<- c(hy_lim3[1], hy_lim3[length(hy_lim3)])
     } else {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
@@ -906,18 +985,49 @@ for(n in 1: length(h)) {
     min_limit <- filter(new_data, depth_cm >= 0.03)
     min_limit <- min(min_limit$Q)
     
+    ## low
     if(min(new_data$prob_fit)>25) {
-      newx1a <- min(new_data$Q)
+      newx1a <- min_limit
       hy_lim1 <- min(new_data$depth_cm)
     } else {
       newx1a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 25)
       hy_lim1 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 25)
     }
     
-    newx2a  <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 50)
-    hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 50)
+    if(max(new_data$prob_fit)<25) {
+      newx1a <- max(new_data$Q)
+      hy_lim1 <- max(new_data$depth_cm)
+    } else {
+      newx1a <- newx1a
+      hy_lim1 <- hy_lim1
+    }
     
-    if(length(newx2a) > 4) {
+    if(length(newx1a) > 2) {
+      newx1a <- c(newx1a[1], newx1a[length(newx1a)])
+      hy_lim1<- c(hy_lim1[1], hy_lim1[length(hy_lim1)])
+    } else {
+      newx1a <- newx1a
+      hy_lim1 <- hy_lim1
+    }
+    
+    ## medium
+    if(max(new_data$prob_fit)<50) {
+      newx2a <- max(new_data$Q)
+      hy_lim2 <- max(new_data$depth_cm)
+    } else {
+      newx2a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 50)
+      hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 50)
+    }
+    
+    if(min(new_data$prob_fit)>50) {
+      newx2a <- min_limit
+      hy_lim2 <- min(new_data$depth_cm)
+    } else {
+      newx2a <- newx2a
+      hy_lim2 <- hy_lim2
+    }
+    
+    if(length(newx2a) > 2) {
       newx2a <- c(newx2a[1], newx2a[length(newx2a)])
       hy_lim2<- c(hy_lim2[1], hy_lim2[length(hy_lim2)])
     } else {
@@ -925,25 +1035,31 @@ for(n in 1: length(h)) {
       hy_lim2 <- hy_lim2
     }
     
-    newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 75)
-    hy_lim3 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 75)
     
+    ##  high prob of occurrence
     if(min(new_data$prob_fit)>75) {
-      newx3a <- min(new_data$Q)
+      newx3a <- min_limit
       hy_lim3 <- min(new_data$depth_cm)
+    } else {
+      newx3a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 75)
+      hy_lim3 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 75)
+    }
+    
+    if(max(new_data$prob_fit)<75) {
+      newx3a <- max(new_data$Q)
+      hy_lim2 <- max(new_data$depth_cm)
     } else {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
     }
     
-    if(length(newx3a) > 4) {
+    if(length(newx3a) > 2) {
       newx3a <- c(newx3a[1], newx3a[length(newx3a)])
       hy_lim3<- c(hy_lim3[1], hy_lim3[length(hy_lim3)])
     } else {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
     }
- 
     ## MAKE DF OF Q LIMITS
     limits[,p] <- c(newx1a[1], newx1a[2],newx1a[3], newx1a[4],
                     newx2a[1], newx2a[2],newx2a[3], newx2a[4], 
