@@ -36,7 +36,7 @@ setwd("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas")
 h <- list.files(pattern="predictions")
 length(h) ## 18
 h
-n=13
+n=8
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
 
@@ -184,8 +184,8 @@ for(n in 1: length(h)) {
     }
     
     if(max(new_data$prob_fit)<0.25) {
-      newx1a <- max(new_data$Q)
-      hy_lim1 <- max(new_data$depth_cm)
+      newx1a <- NA
+      hy_lim1 <- NA
     } else {
       newx1a <- newx1a
       hy_lim1 <- hy_lim1
@@ -201,8 +201,8 @@ for(n in 1: length(h)) {
     
     ## medium
     if(max(new_data$prob_fit)<0.5) {
-      newx2a <- max(new_data$Q)
-      hy_lim2 <- max(new_data$depth_cm)
+      newx2a <- NA
+      hy_lim2 <- NA
     } else {
       newx2a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.5)
       hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 0.5)
@@ -235,8 +235,8 @@ for(n in 1: length(h)) {
     }
     
     if(max(new_data$prob_fit)<0.75) {
-      newx3a <- max(new_data$Q)
-      hy_lim2 <- max(new_data$depth_cm)
+      newx3a <- NA
+      hy_lim2 <- NA
     } else {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
@@ -275,7 +275,7 @@ for(n in 1: length(h)) {
     ## produces percentage of time for each year and season within year for each threshold
     
     ## Main channel curves
-
+    
     low_thresh <- expression_Q(newx1a, peakQ) 
     low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("newx1a")))))
     # low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(">" = as.symbol(">=")))))
@@ -440,10 +440,10 @@ setwd("input_data/HecRas")
 
 h <- list.files(pattern="predictions")
 length(h) ## 18
-
+h
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
-n=1
+n=9
 n
 for(n in 1: length(h)) {
   
@@ -559,7 +559,7 @@ for(n in 1: length(h)) {
   time_statsx <- NULL
   days_data <- NULL
   
-p=1
+# p=3
   # probability as a function of discharge -----------------------------------
   
   for(p in 1:length(positions)) {
@@ -583,8 +583,10 @@ p=1
     peakQ  <- max(peak$Q)
     min_limit <- filter(new_dataD, depth_cm >0.03)
     min_limit <- min(min_limit$Q)
+    min_limit
     
     ## low
+    
     if(min(new_data$prob_fit)>0.25) {
       newx1a <- min_limit
       hy_lim1 <- min(new_data$vel_m_s)
@@ -594,8 +596,8 @@ p=1
     }
     
     if(max(new_data$prob_fit)<0.25) {
-      newx1a <- max(new_data$Q)
-      hy_lim1 <- max(new_data$vel_m_s)
+      newx1a <- NA
+      hy_lim1 <- NA
     } else {
       newx1a <- newx1a
       hy_lim1 <- hy_lim1
@@ -611,8 +613,8 @@ p=1
     
     ## medium
     if(max(new_data$prob_fit)<0.5) {
-      newx2a <- max(new_data$Q)
-      hy_lim2 <- max(new_data$vel_m_s)
+      newx2a <- NA
+      hy_lim2 <- NA
     } else {
       newx2a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 0.5)
       hy_lim2 <- RootLinearInterpolant(new_data$vel_m_s, new_data$prob_fit, 0.5)
@@ -647,8 +649,8 @@ p=1
     }
     
     if(max(new_data$prob_fit)<0.75) {
-      newx3a <- max(new_data$Q)
-      hy_lim2 <- max(new_data$vel_m_s)
+      newx3a <- NA
+      hy_lim2 <- NA
     } else {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
@@ -662,6 +664,8 @@ p=1
       hy_lim3 <- hy_lim3
     }
     
+    newx3a
+    max(new_data$prob_fit)
     
     ## MAKE DF OF Q LIMITS
     limits[,p] <- c(newx1a[1], newx1a[2],newx1a[3], newx1a[4],
@@ -699,11 +703,12 @@ p=1
     
     high_thresh <- expression_Q(newx3a, peakQ)
     high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
-    
+    high_thresh
+    newx3a
     Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
     ###### calculate amount of time
-    
+    head(time_stats)
     time_stats <- new_datax %>%
       dplyr::group_by(water_year) %>%
       dplyr::mutate(Low = sum(eval(low_thresh))/length(DateTime)*100) %>%
@@ -854,7 +859,7 @@ length(h) ## 20
 h
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
-n
+# n=9
 for(n in 1: length(h)) {
   
   NodeData <- read.csv(file=paste("input_data/HecRas/", h[n], sep=""))
@@ -962,7 +967,7 @@ for(n in 1: length(h)) {
   
   time_statsx <- NULL
   days_data <- NULL
-  
+  # p=3
   # probability as a function of discharge -----------------------------------
   
   for(p in 1:length(positions)) {
@@ -984,7 +989,7 @@ for(n in 1: length(h)) {
     peakQ  <- max(peak$Q)
     min_limit <- filter(new_data, depth_cm >= 0.03)
     min_limit <- min(min_limit$Q)
-    
+    min_limit
     ## low
     if(min(new_data$prob_fit)>25) {
       newx1a <- min_limit
@@ -995,8 +1000,8 @@ for(n in 1: length(h)) {
     }
     
     if(max(new_data$prob_fit)<25) {
-      newx1a <- max(new_data$Q)
-      hy_lim1 <- max(new_data$depth_cm)
+      newx1a <- NA
+      hy_lim1 <- NA
     } else {
       newx1a <- newx1a
       hy_lim1 <- hy_lim1
@@ -1012,8 +1017,8 @@ for(n in 1: length(h)) {
     
     ## medium
     if(max(new_data$prob_fit)<50) {
-      newx2a <- max(new_data$Q)
-      hy_lim2 <- max(new_data$depth_cm)
+      newx2a <- NA
+      hy_lim2 <- NA
     } else {
       newx2a <- RootLinearInterpolant(new_data$Q, new_data$prob_fit, 50)
       hy_lim2 <- RootLinearInterpolant(new_data$depth_cm, new_data$prob_fit, 50)
@@ -1046,8 +1051,8 @@ for(n in 1: length(h)) {
     }
     
     if(max(new_data$prob_fit)<75) {
-      newx3a <- max(new_data$Q)
-      hy_lim2 <- max(new_data$depth_cm)
+      newx3a <- NA
+      hy_lim2 <- NA
     } else {
       newx3a <- newx3a
       hy_lim3 <- hy_lim3
