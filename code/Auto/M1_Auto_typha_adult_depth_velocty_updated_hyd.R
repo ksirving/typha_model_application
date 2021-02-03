@@ -168,7 +168,7 @@ for(n in 1: length(h)) {
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- filter(new_data, depth_cm >= 0.03)
+    min_limit <- filter(new_data, depth_cm >= 3)
     min_limit <- min(min_limit$Q)
     min_limit
     
@@ -581,7 +581,7 @@ for(n in 1: length(h)) {
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- filter(new_dataD, depth_cm >0.03)
+    min_limit <- filter(new_dataD, depth_cm >= 3)
     min_limit <- min(min_limit$Q)
     min_limit
     
@@ -987,7 +987,7 @@ for(n in 1: length(h)) {
       filter(prob_fit == max(prob_fit)) #%>%
     
     peakQ  <- max(peak$Q)
-    min_limit <- filter(new_data, depth_cm >= 0.03)
+    min_limit <- filter(new_data, depth_cm >= 3)
     min_limit <- min(min_limit$Q)
     min_limit
     ## low
