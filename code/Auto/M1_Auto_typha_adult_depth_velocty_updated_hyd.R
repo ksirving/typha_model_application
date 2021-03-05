@@ -36,7 +36,7 @@ setwd("/Users/katieirving/Documents/git/flow_eco_mech/input_data/HecRas")
 h <- list.files(pattern="predictions")
 length(h) ## 18
 h
-n=8
+n=9
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
 
@@ -153,17 +153,29 @@ for(n in 1: length(h)) {
   days_data <- NULL
 
   # probability as a function of discharge -----------------------------------
-
+p=3
   for(p in 1:length(positions)) {
     
     new_data <- all_data %>% 
       filter(variable  == positions[p])
-    
+    head(new_data)
+    range(new_data$prob_fit)
     ## define position
     PositionName <- str_split(positions[p], "_", 3)[[1]]
     PositionName <- PositionName[3]
-  
-
+    # out.dir <- "/Users/katieirving/Documents/git/flow_eco_mech/figures/high_res/"
+    # 
+    # p1 <- ggplot(new_data, aes(x = Q, y=prob_fit)) +
+    #   geom_line(aes(group = variable, lty = variable)) +
+    # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
+    #   labs(title = paste(NodeName, ": Typha Adult/Depth: Probability ~ Q", sep=""),
+    #        y = "Probability of Occurrence",
+    #        x = "Q (cfs)") #+ theme_bw(base_size = 15)
+    # 
+    # file.name1 <- paste0(out.dir, "Typha_adult_depth_Glen_ex.jpg")
+    # ggsave(p1, filename=file.name1, dpi=300, height=5, width=6)
+    # 
+    
     peak <- new_data %>%
       filter(prob_fit == max(prob_fit)) #%>%
     
