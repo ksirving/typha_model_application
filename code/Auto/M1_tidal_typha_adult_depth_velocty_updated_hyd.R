@@ -41,7 +41,7 @@ length(h) ## 20
 h
 ## set wd back to main
 setwd("/Users/katieirving/Documents/git/flow_eco_mech")
-
+n=1
 for(n in 1: length(h)) {
   
   # NodeData <- read.csv(file=paste("input_data/HecRas/", h[n], sep=""))
@@ -494,7 +494,7 @@ for(n in 1: length(h)) {
   ## convert units and change names - depending on concrete/soft bottom. if/else to determine changes to data
   
   if(length(hydraul) == 13) {
-    hyd_dep <- hydraul %>%
+    hyd_vel <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
       mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
@@ -502,7 +502,7 @@ for(n in 1: length(h)) {
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
   } else {
-    hyd_dep <- hydraul %>%
+    hyd_vel <- hydraul %>%
       mutate(depth_cm_LOB = (Max..Depth..ft..LOB*0.3048)*100,
              depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100,
              depth_cm_ROB = (Max..Depth..ft..ROB*0.3048)*100) %>%
