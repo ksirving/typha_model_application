@@ -68,7 +68,7 @@ for(n in 1: length(h)) {
     hyd_dep <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
-      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
+      mutate(sp_w_MC = (Stream.Power..lb.ft.s..MC*4.44822)/0.3048) %>%
       mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
@@ -163,18 +163,19 @@ p=3
     ## define position
     PositionName <- str_split(positions[p], "_", 3)[[1]]
     PositionName <- PositionName[3]
-    # out.dir <- "/Users/katieirving/Documents/git/flow_eco_mech/figures/high_res/"
-    # 
-    # p1 <- ggplot(new_data, aes(x = Q, y=prob_fit)) +
-    #   geom_line(aes(group = variable, lty = variable)) +
-    # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
-    #   labs(title = paste(NodeName, ": Typha Adult/Depth: Probability ~ Q", sep=""),
-    #        y = "Probability of Occurrence",
-    #        x = "Q (cfs)") #+ theme_bw(base_size = 15)
-    # 
-    # file.name1 <- paste0(out.dir, "Typha_adult_depth_Glen_ex.jpg")
-    # ggsave(p1, filename=file.name1, dpi=300, height=5, width=6)
-    # 
+    out.dir <- "/Users/katieirving/Documents/git/flow_eco_mech/figures/high_res/"
+
+    p1 <- ggplot(new_data, aes(x = Q, y=prob_fit)) +
+      geom_line(aes(group = variable, lty = variable)) +
+      scale_x_continuous(limits=c(0,5000)) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = "none") +
+      labs(title = paste(NodeName, ": Typha Adult/Depth: Probability ~ Q", sep=""),
+           y = "Probability of Occurrence",
+           x = "Q (cfs)") #+ theme_bw(base_size = 15)
+p1
+    file.name1 <- paste0(out.dir, "Typha_adult_depth_Glen_ex.jpg")
+    ggsave(p1, filename=file.name1, dpi=300, height=5, width=6)
+
     
     peak <- new_data %>%
       filter(prob_fit == max(prob_fit)) #%>%
@@ -272,6 +273,7 @@ p=3
                       hy_lim2[1],hy_lim2[2],hy_lim2[3], hy_lim2[4], 
                       hy_lim3[1], hy_lim3[2],hy_lim3[3],hy_lim3[4])
     
+    limits
     # create year_month column       
     new_datax <- new_data %>% unite(month_year, c(water_year,month), sep="-", remove=F) 
     
@@ -486,7 +488,7 @@ for(n in 1: length(h)) {
     hyd_vel <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
-      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
+      mutate(sp_w_MC = (Stream.Power..lb.ft.s..MC*4.44822)/0.3048) %>%
       mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
@@ -899,7 +901,7 @@ for(n in 1: length(h)) {
     hyd_dep <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
-      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
+      mutate(sp_w_MC = (Stream.Power..lb.ft.s..MC*4.44822)/0.3048) %>%
       mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))

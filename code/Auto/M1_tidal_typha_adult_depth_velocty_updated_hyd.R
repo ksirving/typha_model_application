@@ -69,16 +69,16 @@ for(n in 1: length(h)) {
     rename(Q = Flow) %>%
     mutate(node = NodeName)
   
-  names(hydraul)
-  dim(hydraul)
+  hydraul[is.na(hydraul)] = 0
   ## convert units and change names - depending on concrete/soft bottom. if/else to determine changes to data
+  
   
   if(length(hydraul) == 13) {
     hyd_dep <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
-      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
-      mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
+      mutate(sp_w_MC = abs(Stream.Power..lb.ft.s..MCC*4.44822)/0.3048) %>%
+      mutate(vel_m_MC = abs(Avg..Vel...ft.s..MC*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
   } else {
@@ -89,18 +89,16 @@ for(n in 1: length(h)) {
       mutate(shear_pa_LOB = (Shear..lb.sq.ft..LOB/0.020885),
              shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885),
              shear_pa_ROB = (Shear..lb.sq.ft..ROB/0.020885)) %>%
-      mutate(sp_w_LOB = (Stream.Power..lb.ft.s..LOB*4.44822)/0.3048,
-             sp_w_MC = (Stream.Power..lb.ft.s..MC*4.44822)/0.3048,
-             sp_w_ROB = (Stream.Power..lb.ft.s..ROB*4.44822)/0.3048) %>%
-      mutate(vel_m_LOB = (Avg..Vel...ft.s..LOB*0.3048),
-             vel_m_MC = (Avg..Vel...ft.s..MC*0.3048),
-             vel_m_ROB = (Avg..Vel...ft.s..ROB*0.3048)) %>%
+      mutate(StreamPower_w_LOB = abs(Stream.Power..lb.ft.s..LOB*4.44822)/0.3048,
+             StreamPower_w_MC = abs(Stream.Power..lb.ft.s..MC*4.44822)/0.3048,
+             StreamPower_w_ROB = abs(Stream.Power..lb.ft.s..LOB*4.44822)/0.3048) %>%
+      mutate(vel_m_LOB = abs(Avg..Vel...ft.s..LOB*0.3048),
+             vel_m_MC = abs(Avg..Vel...ft.s..MC*0.3048),
+             vel_m_ROB = abs(Avg..Vel...ft.s..ROB*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
     
   }
-  
-  
   ## take only depth variable
   hyd_dep <- hyd_dep %>% select(DateTime, node, Q, contains("depth"), date_num)
 
@@ -296,19 +294,15 @@ p=3
     ## define equation for roots
     ## produces percentage of time for each year and season within year for each threshold
     
-    ## Main channel curves
+    # high_thresh
+    low_thresh <- expression_Q(hy_lim1, peakQ) 
+    low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("hy_lim1")))))
     
-    low_thresh <- expression_Q(newx1a, peakQ) 
-    low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("newx1a")))))
-    # low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(">" = as.symbol(">=")))))
-   
+    med_thresh <- expression_Q(hy_lim2, peakQ)
+    med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("hy_lim2")))))
     
-    med_thresh <- expression_Q(newx2a, peakQ)
-    med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("newx2a")))))
-
-    
-    high_thresh <- expression_Q(newx3a, peakQ)
-    high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
+    high_thresh <- expression_Q(hy_lim3, peakQ)
+    high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("hy_lim3")))))
     
     Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
@@ -489,16 +483,15 @@ for(n in 1: length(h)) {
     rename(Q = Flow) %>%
     mutate(node = NodeName)
   
-  names(hydraul)
-  dim(hydraul)
+  hydraul[is.na(hydraul)] = 0
   ## convert units and change names - depending on concrete/soft bottom. if/else to determine changes to data
   
   if(length(hydraul) == 13) {
     hyd_vel <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
-      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
-      mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
+      mutate(sp_w_MC = abs(Stream.Power..lb.ft.s..MC*4.44822)/0.3048) %>%
+      mutate(vel_m_MC = abs(Avg..Vel...ft.s..MC*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
   } else {
@@ -509,12 +502,12 @@ for(n in 1: length(h)) {
       mutate(shear_pa_LOB = (Shear..lb.sq.ft..LOB/0.020885),
              shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885),
              shear_pa_ROB = (Shear..lb.sq.ft..ROB/0.020885)) %>%
-      mutate(sp_w_LOB = (Stream.Power..lb.ft.s..LOB*4.44822)/0.3048,
-             sp_w_MC = (Stream.Power..lb.ft.s..MC*4.44822)/0.3048,
-             sp_w_ROB = (Stream.Power..lb.ft.s..ROB*4.44822)/0.3048) %>%
-      mutate(vel_m_LOB = (Avg..Vel...ft.s..LOB*0.3048),
-             vel_m_MC = (Avg..Vel...ft.s..MC*0.3048),
-             vel_m_ROB = (Avg..Vel...ft.s..ROB*0.3048)) %>%
+      mutate(StreamPower_w_LOB = abs(Stream.Power..lb.ft.s..LOB*4.44822)/0.3048,
+             StreamPower_w_MC = abs(Stream.Power..lb.ft.s..MC*4.44822)/0.3048,
+             StreamPower_w_ROB = abs(Stream.Power..lb.ft.s..LOB*4.44822)/0.3048) %>%
+      mutate(vel_m_LOB = abs(Avg..Vel...ft.s..LOB*0.3048),
+             vel_m_MC = abs(Avg..Vel...ft.s..MC*0.3048),
+             vel_m_ROB = abs(Avg..Vel...ft.s..ROB*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
     
@@ -718,21 +711,21 @@ for(n in 1: length(h)) {
     
     ## Main channel curves
     
+    # high_thresh
+    low_thresh <- expression_Q(hy_lim1, peakQ) 
+    low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("hy_lim1")))))
     
-    low_thresh <- expression_Q(newx1a, peakQ) 
-    low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("newx1a")))))
+    med_thresh <- expression_Q(hy_lim2, peakQ)
+    med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("hy_lim2")))))
     
-    med_thresh <- expression_Q(newx2a, peakQ)
-    med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("newx2a")))))
+    high_thresh <- expression_Q(hy_lim3, peakQ)
+    high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("hy_lim3")))))
     
-    high_thresh <- expression_Q(newx3a, peakQ)
-    high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
-    high_thresh
-    newx3a
     Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
+    
     ###### calculate amount of time
-    head(time_stats)
+    # head(time_stats)
     time_stats <- new_datax %>%
       dplyr::group_by(water_year) %>%
       dplyr::mutate(Low = sum(eval(low_thresh))/length(DateTime)*100) %>%
@@ -905,16 +898,16 @@ for(n in 1: length(h)) {
     rename(Q = Flow) %>%
     mutate(node = NodeName)
   
-  names(hydraul)
-  dim(hydraul)
+  hydraul[is.na(hydraul)] = 0
   ## convert units and change names - depending on concrete/soft bottom. if/else to determine changes to data
+  
   
   if(length(hydraul) == 13) {
     hyd_dep <- hydraul %>%
       mutate(depth_cm_MC = (Max..Depth..ft..MC*0.3048)*100) %>%
       mutate(shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885)) %>%
-      mutate(sp_w_MC = (Shear..lb.sq.ft..MC*4.44822)/0.3048) %>%
-      mutate(vel_m_MC = (Avg..Vel...ft.s..MC*0.3048)) %>%
+      mutate(sp_w_MC = abs(Stream.Power..lb.ft.s..MC*4.44822)/0.3048) %>%
+      mutate(vel_m_MC = abs(Avg..Vel...ft.s..MC*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
   } else {
@@ -925,12 +918,12 @@ for(n in 1: length(h)) {
       mutate(shear_pa_LOB = (Shear..lb.sq.ft..LOB/0.020885),
              shear_pa_MC = (Shear..lb.sq.ft..MC/0.020885),
              shear_pa_ROB = (Shear..lb.sq.ft..ROB/0.020885)) %>%
-      mutate(sp_w_LOB = (Stream.Power..lb.ft.s..LOB*4.44822)/0.3048,
-             sp_w_MC = (Stream.Power..lb.ft.s..MC*4.44822)/0.3048,
-             sp_w_ROB = (Stream.Power..lb.ft.s..ROB*4.44822)/0.3048) %>%
-      mutate(vel_m_LOB = (Avg..Vel...ft.s..LOB*0.3048),
-             vel_m_MC = (Avg..Vel...ft.s..MC*0.3048),
-             vel_m_ROB = (Avg..Vel...ft.s..ROB*0.3048)) %>%
+      mutate(StreamPower_w_LOB = abs(Stream.Power..lb.ft.s..LOB*4.44822)/0.3048,
+             StreamPower_w_MC = abs(Stream.Power..lb.ft.s..MC*4.44822)/0.3048,
+             StreamPower_w_ROB = abs(Stream.Power..lb.ft.s..LOB*4.44822)/0.3048) %>%
+      mutate(vel_m_LOB = abs(Avg..Vel...ft.s..LOB*0.3048),
+             vel_m_MC = abs(Avg..Vel...ft.s..MC*0.3048),
+             vel_m_ROB = abs(Avg..Vel...ft.s..ROB*0.3048)) %>%
       select(-contains("ft")) %>%
       mutate(date_num = seq(1,length(DateTime), 1))
     
@@ -1119,15 +1112,15 @@ for(n in 1: length(h)) {
     
     ## Main channel curves
     
+    # high_thresh
+    low_thresh <- expression_Q(hy_lim1, peakQ) 
+    low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("hy_lim1")))))
     
-    low_thresh <- expression_Q(newx1a, peakQ) 
-    low_thresh <-as.expression(do.call("substitute", list(low_thresh[[1]], list(limit = as.name("newx1a")))))
+    med_thresh <- expression_Q(hy_lim2, peakQ)
+    med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("hy_lim2")))))
     
-    med_thresh <- expression_Q(newx2a, peakQ)
-    med_thresh <-as.expression(do.call("substitute", list(med_thresh[[1]], list(limit = as.name("newx2a")))))
-    
-    high_thresh <- expression_Q(newx3a, peakQ)
-    high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("newx3a")))))
+    high_thresh <- expression_Q(hy_lim3, peakQ)
+    high_thresh <-as.expression(do.call("substitute", list(high_thresh[[1]], list(limit = as.name("hy_lim3")))))
     
     Q_Calc[p,] <- c(paste(low_thresh), paste(med_thresh), paste(high_thresh))
     
